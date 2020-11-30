@@ -1,0 +1,125 @@
+{
+  "__comment_0": "PFEATURE isn't restricted to binary feature models.",
+  "__meta_binary": false,
+  "segment_type": {
+    "vowel": [
+      {
+        "v_length": {
+          "v_overshort": [],
+          "v_short": [],
+          "v_long": []
+        },
+        "v_modifier": {
+          "v_no_modifier": [],
+          "v_fricative": [],
+          "v_retroflexed": [],
+          "v_pharyngealized": [],
+          "v_laryngealized": [],
+          "v_nasalized": []
+        },
+        "v_voicing": {
+          "v_breathy": [],
+          "v_normal_voice": [],
+          "v_voiceless": []
+        },
+        "v_height": {
+          "v_high": [],
+          "v_lowered_high": [],
+          "v_higher_mid": [],
+          "v_mid": [],
+          "v_lower_mid": [],
+          "v_raised_low": [],
+          "v_low": []
+        },
+        "v_backness": {
+          "v_front": [],
+          "v_retracted_front": [],
+          "v_central": [],
+          "v_fronted_back": [],
+          "v_back": []
+        },
+        "v_rounding": {
+          "v_unrounded": [],
+          "v_rounded": []
+        },
+        "v_phthongarity": {
+          "v_monophthong": [],
+          "v_diphthong": []
+        }
+      }
+    ],
+    "consonant": [
+      {
+        "c_length": {
+          "c_short": [],
+          "c_long": []
+        },
+        "c_voicing": {
+          "c_voiced": [],
+          "c_voiceless": []
+        },
+        "c_aspiration": {
+          "c_no_aspiration": [],
+          "c_aspirated": [],
+          "c_preaspirated": [],
+          "c_prestopped": [],
+          "c_prenasalized": [],
+          "c_breathy": []
+        },
+        "c_sec_art": {
+          "c_no_sec_art": [],
+          "c_labialized": [],
+          "c_palatalized": [],
+          "c_velarized": [],
+          "c_pharyngealized": [],
+          "c_laryngealized": [],
+          "c_nasalized": []
+        },
+        "c_place": {
+        	"c_bilabial": [],
+        	"c_labiodental": [],
+        	"c_dental": [],
+        	"c_dental_or_alveolar": [],
+        	"c_alveolar": [],
+        	"c_palato_alveolar": [],
+        	"c_retroflex": [],
+        	"c_palatal": [],
+        	"c_velar": [],
+        	"c_velar_alveolar": [],
+        	"c_labial_velar": [],
+        	"c_uvular": [],
+        	"c_pharyngeal": [],
+        	"c_glottal": []
+        },
+        "c_modifier": {
+        	"c_no_modifier": [],
+        	"c_sibilant": [],
+        	"c_lateral": []
+        },
+        "c_manner": {
+        	"c_click": [],
+        	"c_affricated_click": [],
+        	"c_velar_fricated_click": [],
+        	"c_ejective_stop": [],
+        	"c_ejective_fricative": [],
+        	"c_ejective_affricate": [],
+        	"c_implosive": [],
+        	"c_plosive": [],
+        	"c_tap_flap": [],
+        	"c_trill": [],
+        	"c_nasal": [],
+        	"c_affricate": [],
+        	"c_fricative": [],
+        	"c_r_sound": [],
+        	"c_approximant": []
+        },
+        "c_release_modifier": {
+        	"c_no_release_modifier": [],
+        	"c_breathy_or_fricative_release": [],
+        	"c_lateral_release": [],
+        	"c_nasal_release": []
+        }
+      }
+    ]
+  }
+}

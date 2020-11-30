@@ -1,0 +1,61 @@
+{
+	"__comment_0": "Anything prefixed with two underscores is discarded, and not interpreted as a feature."
+,	"__comment_1": "From Moran 2012 p. 280"
+,	"__comment_2": "Anything prefixed with __meta is reserved for use by the interpreter."
+,	"__comment_3": "Here, __meta_binary could be interpreted to check that all features have + and - values, and only those two."
+,	"__meta_binary": true
+
+,	"fortis": {"+": [], "-": []}
+,	"voice": {"+": [], "-": []}
+,	"constricted_glottis": {"+": [], "-": []}
+,	"spread_glottis": {"+": [], "-": []}
+
+,	"long": {"+": [], "-": []}
+,	"nasal": {"+": [], "-": []}
+,	"stress": {"+": [], "-": []}
+, 	"approximant": {"+": [], "-": []}
+,	"consonantal": {
+		"+": [
+			{"tense": {"+": [], "-": []}}
+		]
+	,	"-": []
+	}
+,	"sonorant": {
+		"+": []
+	,	"-": [
+			{"delayed_release": {"+": [], "-": []}}
+		]	
+	}
+,	"syllabic": {"+": [], "-": []}
+,	"tone": {"+": [], "-": []}
+
+,	"trill": {"+": [], "-": []}
+,	"tap": {"+": [], "-": []}
+, 	"lateral": {"+": [], "-": []}
+,	"continuant": {"+": [], "-": []}
+
+,	"labial": {
+		"+": [{
+			"round": {"+": [], "-": []}
+		}]
+	,	"-": []
+	}
+,	"labiodental": {"+": [], "-": []}
+,	"coronal": {
+		"+": [
+			{"anterior": {"+": [], "-": []}}
+		,	{"distributed": {"+": [], "-": []}}
+		,	{"strident": {"+": [], "-": []}}
+		]
+	,	"-": []
+	}
+,	"dorsal": {
+		"+": [
+			{"front": {"+": [], "-": []}}
+		,	{"low": {"+": [], "-": []}}
+		,	{"back": {"+": [], "-": []}}
+		,	{"high": {"+": [], "-": []}}
+		]
+	,	"-": []
+	}
+}

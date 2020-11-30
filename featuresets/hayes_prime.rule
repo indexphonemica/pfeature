@@ -1,0 +1,78 @@
+# Comments look like this.
+
+# Meta commands start with __meta and contain commands and arguments.
+# You can define defaults for features, so you don't have to provide them for base characters.
+# 'true' and 'false' are treated as synonyms for '+' and '-'.
+# Defaults set with `__meta default` will hold until EOF.
+__meta default false : fortis constricted_glottis spread_glottis long stress tone
+
+# You can also define block-level defaults.
+# Block commands are `set` (set a default), `remove`, and `clear`.
+# We're going to define plosives first, so:
+__meta block set false : nasal approximant sonorant delayed_release syllabic trill tap lateral continuant
+__meta block set true  : consonantal 
+# Defaults and blocks only affect the definitions of base characters.
+
+# Define base characters with =.
+# +feature is shorthand for feature:+.
+=	p +labial -coronal -dorsal   -voice   -labiodental -round
+=	t -labial +coronal -dorsal   -voice   +anterior -distributed -strident
+=   c -labial -coronal +dorsal   -voice   +front -back +high -low  # For simplicity's sake. PHOIBLE defines palatals as coronal.
+=   k -labial -coronal +dorsal   -voice   -front -back +high -low
+=   q -labial -coronal +dorsal   -voice   -front +back -high -low
+=   ʔ -labial -coronal -dorsal   -voice   +constricted_glottis     # Overriding defaults is fine.
+
+# Derive base characters from other characters with =>.
+=>	b p +voice
+=>	d t +voice
+=>	ɟ c +voice
+=>	g k +voice
+=>  ɢ q +voice
+
+# Now we define some fricatives.
+__meta block set true : continuant
+=	ɸ +labial -coronal -dorsal   -voice   -labiodental -round
+=	f +labial -coronal -dorsal   -voice   +labiodental -round
+=   θ -labial +coronal -dorsal   -voice   +anterior +distributed -strident
+=   s -labial +coronal -dorsal   -voice   +anterior -distributed +strident
+=   ʃ -labial +coronal -dorsal   -voice   -anterior +distributed +strident
+=	ʂ -labial +coronal -dorsal   -voice   -anterior -distributed +strident
+=   ç -labial -coronal +dorsal   -voice   +front -back +high -low
+=	x -labial -coronal +dorsal   -voice   -front -back +high -low
+=	χ -labial -coronal +dorsal   -voice   -front +back -high -low
+# /h/ isn't consonantal in Hayes-Prime. We'll also skip the pharyngeals and so on.
+
+=>	β ɸ +voice
+=>	v f +voice
+=>	ð θ +voice
+=>	z s +voice
+=>	ʒ ʃ +voice
+=>	ʐ ʂ +voice
+=>	ʝ ç +voice
+=>	ɣ x +voice
+=>	ʁ χ +voice
+
+# Combining modifiers, suffixal spacing modifiers, and prefixal spacing modifiers are defined differently.
+# In each case, the rule format is (deftype) (char) (features to match on) : (features to patch the base with).
+# To apply different patches for different inputs, just define multiple rules for the same modifier.
+
+# To define a combining modifier, use ==.
+# You can use the character 0 (zero) to hold the combining modifier. PFEATURE will remove it and know what you mean.
+
+==	0̥ +voice : -voice
+
+# For the dental diacritic, we'll need two different rules: 
+# - alveolars to dentals
+# - labials to labiodentals
+
+==	0̪ +anterior : +distributed
+==  0̪ +labial   : +labiodental
+
+# To define a suffixal modifier, use =+.
+
+=+ 	ʰ -voice : +spread_glottis
+
+# To define a prefixal modifier, use =-.
+# This example also demonstrates sequences.
+
+=-	ⁿ +consonantal : +,-nasal

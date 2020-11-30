@@ -1,61 +1,53 @@
-{
-	"__comment_0": "Anything prefixed with two underscores is discarded, and not interpreted as a feature."
-,	"__comment_1": "From Moran 2012 p. 280, but I've moved 'labiodental' under 'labial'."
-,	"__comment_2": "Anything prefixed with __meta is reserved for use by the interpreter."
-,	"__comment_3": "Here, __meta_binary could be interpreted to check that all features have + and - values, and only those two."
-,	"__meta_binary": true
+[
+	{"name": "fortis", "values": {"+": [], "-": []}},
+	{"name": "voice", "values": {"+": [], "-": []}},
+	{"name": "constricted_glottis", "values": {"+": [], "-": []}},
+	{"name": "spread_glottis", "values": {"+": [], "-": []}},
 
-,	"fortis": {"+": [], "-": []}
-,	"voice": {"+": [], "-": []}
-,	"constricted_glottis": {"+": [], "-": []}
-,	"spread_glottis": {"+": [], "-": []}
-
-,	"long": {"+": [], "-": []}
-,	"nasal": {"+": [], "-": []}
-,	"stress": {"+": [], "-": []}
-, 	"approximant": {"+": [], "-": []}
-,	"consonantal": {
+	{"name": "long", "values": {"+": [], "-": []}},
+	{"name": "nasal", "values": {"+": [], "-": []}},
+	{"name": "stress", "values": {"+": [], "-": []}},
+	{"name": "approximant", "values": {"+": [], "-": []}},
+	{"name": "consonantal", "values": {
 		"+": [
-			{"tense": {"+": [], "-": []}}
+			{"name": "tense", "values": {"+": [], "-": []}}
+		],
+		"-": []
+	}},
+	{"name": "sonorant", "values": {
+		"+": [],
+		"-": [
+			{"name": "delayed_release", "values": {"+": [], "-": []}}
 		]
-	,	"-": []
-	}
-,	"sonorant": {
-		"+": []
-	,	"-": [
-			{"delayed_release": {"+": [], "-": []}}
-		]	
-	}
-,	"syllabic": {"+": [], "-": []}
-,	"tone": {"+": [], "-": []}
+	}},
+	{"name": "syllabic", "values": {"+": [], "-": []}},
+	{"name": "tone", "values": {"+": [], "-": []}},
 
-,	"trill": {"+": [], "-": []}
-,	"tap": {"+": [], "-": []}
-, 	"lateral": {"+": [], "-": []}
-,	"continuant": {"+": [], "-": []}
+	{"name": "trill", "values": {"+": [], "-": []}},
+	{"name": "tap", "values": {"+": [], "-": []}},
+	{"name": "lateral", "values": {"+": [], "-": []}},
+	{"name": "continuant", "values": {"+": [], "-": []}},
 
-,	"labial": {
-		"+": [{
-			"round": {"+": [], "-": []}
-		}]
-	,	"-": []
-	}
-,	"labiodental": {"+": [], "-": []}
-,	"coronal": {
+	{"name": "labial", "values": {
 		"+": [
-			{"anterior": {"+": [], "-": []}}
-		,	{"distributed": {"+": [], "-": []}}
-		,	{"strident": {"+": [], "-": []}}
+			{"name": "round", "values": {"+": [], "-": []}},
+			{"name": "labiodental", "values": {"+": [], "-": []}}
 		]
-	,	"-": []
-	}
-,	"dorsal": {
+	}},
+	{"name": "coronal", "values": {
 		"+": [
-			{"front": {"+": [], "-": []}}
-		,	{"low": {"+": [], "-": []}}
-		,	{"back": {"+": [], "-": []}}
-		,	{"high": {"+": [], "-": []}}
+			{"name": "anterior", "values": {"+": [], "-": []}},
+			{"name": "distributed", "values": {"+": [], "-": []}},
+			{"name": "strident", "values": {"+": [], "-": []}}
+		],
+		"-": []
+	}},
+	{"name": "dorsal", "values": {
+		"+": [
+			{"name": "front", "values": {"+": [], "-": []}},
+			{"name": "back", "values": {"+": [], "-": []}},
+			{"name": "low", "values": {"+": [], "-": []}},
+			{"name": "high", "values": {"+": [], "-": []}}
 		]
-	,	"-": []
-	}
-}
+	}}
+]

@@ -1,0 +1,12 @@
+{
+  "name": "pfeature",
+  "version": "0.0.1",
+  "description": "IPHON segment featuralizer",
+  "main": "output/pfeature.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "tsc": "tsc"
+  },
+  "author": "IPHON",
+  "license": "ISC"
+}

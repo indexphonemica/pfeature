@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "outDir": "output",
+    "target": "ES2018",
+
+    "noEmitOnError": true,
+    "strict": true,
+  },
+  "include": ["*.ts"],
+}

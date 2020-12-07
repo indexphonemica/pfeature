@@ -1,4 +1,4 @@
-const fs = require('fs')
+import * as fs from 'fs'
 
 //  A Feature is the basic element of featuralization.
 //  It has a name and a map of values. This lets us accommodate both UPSID-style descriptive features and PHOIBLE-style
@@ -39,6 +39,7 @@ const fs = require('fs')
 //      ]
 //    }
 // }
+
 type Feature = {
 	name: string,
 	values: {
@@ -66,12 +67,10 @@ type Root = Feature & {
 type FeatureValue = {
 	feature: Feature,
 	value: string, // key of Feature.values
-	// children: Array<FeatureValue> // corresponding to Feature.values[value]... why is this here?
 }
-type ValueRoot = FeatureValue & {
-	feature: Root,
-	value: "Features"
-}
+
+// Keep it simple and don't get into the quagmire of object comparison.
+type FeatureBundle = Map<string, string> // map of feature name to feature value
 
 // Properties shared by all glyph rules.
 // A glyph rule maps *glyph components* (base characters or modifiers) to *segments* (feature bundles).
@@ -88,11 +87,10 @@ type GlyphBase = {
 	glyph: string
 }
 
-// A base character simply represents a bundle of features, which is stored from the root.
-// Because they're stored from the root, diacritic application is a simple matter of applying patches to roots.
-type BaseCharacter = GlyphBase & {
+// A base character simply represents a bundle of features.
+export type BaseCharacter = GlyphBase & {
 	klass: "base",
-	features: Root
+	features: FeatureBundle
 }
 
 // When a diacritic is featuralized, it's tested orderlessly against every LHS rule; if the segment under
@@ -101,28 +99,20 @@ type BaseCharacter = GlyphBase & {
 // application of multiple rules from a single diacritic would be reasonable. This also ensures the irrelevance of 
 // rule ordering.
 // If the LHS doesn't ensure that all RHS features are reachable, that's a ~compile-time error.
-
-// TODO: might it make sense to store the RHS as a root?
-// Pro:
-// - simpler diffs?
-// Con:
-// - more verbosity
-// - modifiers will surely be specified as arrays of features, so more transformation overheads
-type Modifier = GlyphBase & {
+export type Modifier = GlyphBase & {
 	klass: "combining" | "spacing" | "prefixal",
-	rules: Map<Array<FeatureValue>, Array<FeatureValue>>
+	rules: Map<FeatureBundle, FeatureBundle>
 }
-type GlyphRule = BaseCharacter | Modifier
 
 // A parsed glyph is an array of characters.
 type Glyph = Array<string>
 
 type Segment = {
 	glyph: string,
-	features: Root
+	features: FeatureBundle
 }
 
-class FeatureSchema {
+export class FeatureSchema {
 	raw_schema: Root
 	features_by_name: Map<string, Feature> // map from name of feature to feature
 	features_by_parent: Map<string, FeatureValue> // map from name of feature to {feature: parent, value: branch_to_child}
@@ -180,8 +170,9 @@ class FeatureSchema {
 	// - the RHS feature is also the LHS feature                              (e.g. -labiodental -> +labiodental)
 	// - the RHS is a sibling of LHS                                          (e.g. +anterior -> +distributed)
 	// - the LHS must contain the correct feature of its immediate descendant (e.g. +coronal -> +anterior)
-	// This is untested and almost certainly extremely wrong. Need to write parser for rules first.
-	typecheck(modifier: Modifier) {
+	// TODO: should also ensure that every possible feature in the tree has a value
+	// (apply feature bundle, generate base, validate base)
+	validate_modifier(modifier: Modifier) {
 		let root_children = new Set(this.raw_schema.values.Features.map(x => x.name))
  
 		for (let rule of modifier.rules) {
@@ -210,6 +201,37 @@ class FeatureSchema {
 				)) throw new Error(`Invalid rule ${JSON.stringify(rule)} for ${modifier.glyph}`)
 			}
 		}
+	}
+
+	// Ensure that there are no nulls in a base char's feature tree.
+	// Every child of root must be defined, as must every child of a defined value.
+	// For example, with Hayes-Prime, there must be a value for ±coronal, and if that value is +,
+	// there must be values for ±anterior, ±distributed, and ±strident.
+	validate_bundle(bundle: FeatureBundle, err_str?: string) {
+		const top_level_features = this.raw_schema.values.Features
+		let stack = top_level_features
+		while (stack.length > 0) {
+			let curr = stack.pop()
+			if (!bundle.has(curr.name)) throw new Error(`Invalid bundle: missing ${curr.name} ${err_str ? `(${err_str})` : ''}`)
+			let bundle_value = bundle.get(curr.name)
+			let children = curr.values[bundle_value] as Feature[] // thinks this is any - stupid
+			if (children.length > 0) stack.push(...children)
+		}
+	}
+
+	apply_modifier(base: FeatureBundle, modifier: FeatureBundle) {
+		const keys = new Set( base.keys().concat(modifier.keys()) )
+		let res: FeatureBundle = new Map()
+		for (let k of keys) {
+			let val: string
+			if (modifier.has(k)) {
+				res.set( k, modifier.get(k) )
+			} else {
+				res.set( k, base.get(k) )
+			}
+		}
+		validate_bundle(res, "Runtime error")
+		return res
 	}
 }
 
@@ -275,62 +297,3 @@ function parse_feature_schema(path: string): FeatureSchema {
 
 	return new FeatureSchema(root)
 }
-
-// test stuff
-const schema = parse_feature_schema('featuresets/hayes_prime.json')
-
-// This should work.
-const rules = new Map([
-	[ 
-		[ 
-			{feature: schema.get('coronal') as Feature, value: '+'} as FeatureValue
-		],
-	  	[
-	  		{feature: schema.get('anterior') as Feature, value: '+'} as FeatureValue
-	  	]
-	],
-	[
-		[ 
-			{feature: schema.get('labiodental') as Feature, value: '-'} as FeatureValue
-		],
-		[ 
-			{feature: schema.get('labiodental') as Feature, value: '+'} as FeatureValue
-		]
-	],
-	[
-		[
-			{feature: schema.get('spread_glottis') as Feature, value: '+'} as FeatureValue
-		], 
-		[
-			{feature: schema.get('long') as Feature, value: '+'} as FeatureValue
-		]
-	],
-	[
-		[
-			{feature: schema.get('anterior') as Feature, value: '+'} as FeatureValue
-		],
-		[
-			{feature: schema.get('distributed') as Feature, value: '+'} as FeatureValue
-		]
-	]
-])
-schema.typecheck({
-  klass: "combining",
-  glyph: "test",
-  rules: rules
-})
-
-console.log(' ---- everything that should work works ---- ')
-
-// This should *not* work.
-schema.typecheck({
-	klass: "combining", glyph: "test2",
-	rules: new Map([[
-		[ 
-			{ feature: schema.get('coronal'), value: '-' } 
-		],
-		[
-			{ feature: schema.get('distributed'), value: '+' }
-		]
-	]])
-})

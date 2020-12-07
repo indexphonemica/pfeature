@@ -6,8 +6,8 @@
 # Defaults set with `__meta default` will hold until EOF.
 __meta default false : fortis constricted_glottis spread_glottis long stress tone
 
-# You can also define block-level defaults.
-# Block commands are `set` (set a default), `remove`, and `clear`.
+# You can also define named block-level defaults.
+# Block commands are `set` (set a default), `remove` (remove a default), and `clear`.
 # We're going to define plosives first, so:
 __meta block set false : nasal approximant sonorant delayed_release syllabic trill tap lateral continuant
 __meta block set true  : consonantal 
@@ -15,6 +15,7 @@ __meta block set true  : consonantal
 
 # Define base characters with =.
 # +feature is shorthand for feature:+.
+# You can't leave features undetermined - for example, if you have +coronal, you have to define values for anterior, distributed, and strident.
 =	p +labial -coronal -dorsal   -voice   -labiodental -round
 =	t -labial +coronal -dorsal   -voice   +anterior -distributed -strident
 =   c -labial -coronal +dorsal   -voice   +front -back +high -low  # For simplicity's sake. PHOIBLE defines palatals as coronal.

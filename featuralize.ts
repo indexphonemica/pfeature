@@ -43,7 +43,7 @@ import * as fs from 'fs'
 type Feature = {
 	name: string,
 	values: {
-		[value: string]: Array<Feature> // child features
+		[value: string]: Array<Feature> | undefined // child features, or absent
 	}
 }
 function get_children(feature: Feature) {
@@ -64,13 +64,13 @@ type Root = Feature & {
 	}
 }
 
-type FeatureValue = {
+export type FeatureValue = {
 	feature: Feature,
 	value: string, // key of Feature.values
 }
 
 // Keep it simple and don't get into the quagmire of object comparison.
-type FeatureBundle = Map<string, string> // map of feature name to feature value
+export type FeatureBundle = Map<string, string> // map of feature name to feature value
 
 // Properties shared by all glyph rules.
 // A glyph rule maps *glyph components* (base characters or modifiers) to *segments* (feature bundles).
@@ -207,14 +207,20 @@ export class FeatureSchema {
 	// Every child of root must be defined, as must every child of a defined value.
 	// For example, with Hayes-Prime, there must be a value for ±coronal, and if that value is +,
 	// there must be values for ±anterior, ±distributed, and ±strident.
+	// TODO test this at all
 	validate_bundle(bundle: FeatureBundle, err_str?: string) {
 		const top_level_features = this.raw_schema.values.Features
 		let stack = top_level_features
 		while (stack.length > 0) {
 			let curr = stack.pop()
-			if (!bundle.has(curr.name)) throw new Error(`Invalid bundle: missing ${curr.name} ${err_str ? `(${err_str})` : ''}`)
 			let bundle_value = bundle.get(curr.name)
-			let children = curr.values[bundle_value] as Feature[] // thinks this is any - stupid
+			if (bundle_value === undefined) {
+				throw new Error(`Invalid bundle: missing ${curr.name} ${err_str ? `(${err_str})` : ''}`)
+			}
+			let children = curr.values[bundle_value]
+			if (children === undefined) {
+				throw new Error(`Invalid bundle: value ${bundle_value} not possible on feature ${curr.name} ${err_str ? `(${err_str})` : ''}`)
+			}
 			if (children.length > 0) stack.push(...children)
 		}
 	}

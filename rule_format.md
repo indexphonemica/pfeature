@@ -20,7 +20,7 @@ For example, `__meta default fortis : false` sets the default value of `fortis` 
 
 ## alias
 
-`__meta alias {name} : [features]` sets aliases, which are like variables except immutable. Aliases can be used instead of feature values in glyph definitions, but must be prefixed with the sigil `*`. Alias definitions are hoisted.
+`__meta alias {name} : [features]` sets aliases, which are like variables except immutable. Aliases can be used instead of feature values in glyph definitions, but must be prefixed with the sigil `*`. Alias definitions are hoisted in one step: base and modifier definitions can use alias definitions that appear later in the file, but other alias definitions can't.
 
 For example:
 ```
@@ -31,6 +31,8 @@ __meta alias bilabial : -coronal -dorsal -labiodental -round +labial
 p : *bilabial *plosive -voice
 b : *bilabial *plosive +voice
 ```
+
+You can also use `__meta setalias {name} {value} : {features}`, similarly to the `default` command.
 
 # Base characters 
 
@@ -85,3 +87,5 @@ Suffixal modifiers are those which appear after the base character rule.
 # Binary feature shorthand
 
 For a binary featureset, `+` is treated as equivalent to `true`, and `-` is treated as equivalent to `false`. It is also possible to use `-name` as shorthand for `name:-` or `name:false`.
+
+A similar shortcut should probably exist for `0` and `null`, but doesn't yet.

@@ -163,13 +163,13 @@ class Ruleset {
 		for (let f of features) {
 			// TODO handle alias references
 			let res = this.parse_feature(f)
-			bundle.set(res.feature.name, res.value)
+			for (let k of res.keys()) bundle.set(k, res.get(k) as string)
 		}
 		return bundle
 	}
 
 	// parse feature + value declaration, e.g. anterior:false or -anterior
-	private parse_feature(fname_raw: string): FeatureValue {
+	private parse_feature(fname_raw: string): FeatureBundle {
 		const fname_arr = fname_raw.split(':')
 		if (fname_arr.length > 2 || fname_arr.length === 0) throw new Error(`Invalid feature assignment: ${fname_raw}`)
 
@@ -187,7 +187,10 @@ class Ruleset {
 		let fobj = this.feature_schema.features_by_name.get(fname)
 		if (!fobj) throw new Error(`Nonexistent feature: ${fname}`)
 		if (!fobj.values.hasOwnProperty(fval)) throw new Error(`Feature ${fname} doesn't have value ${fval}`)
-		return {feature: fobj, value: fval}
+
+		let res: FeatureBundle = new Map()
+		res.set(fobj.name, fval)
+		return res
 	}
 }
 

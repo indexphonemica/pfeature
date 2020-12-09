@@ -1,4 +1,4 @@
-import { BaseCharacter, FeatureBundle, FeatureSchema, FeatureValue, Modifier } from './featuralize'
+import { BaseCharacter, FeatureBundle, FeatureSchema, FeatureValue, Modifier } from './feature_schema'
 import * as fs from 'fs'
 
 const RS_COMMENT = '#'
@@ -16,11 +16,13 @@ const RS_MOD_SUFFIX_FULL = 'suffix'
 const RS_MOD_PREFIX = '=-'
 const RS_MOD_PREFIX_FULL = 'prefix'
 
+const RS_ALIAS = '*' // must be one char since we check str[0]
+
 // aliases for binary feature support
 const FALSES = new Set( ['-', 'false'] )
 const TRUES = new Set( ['+', 'true'] )
 
-class Ruleset {
+export class Ruleset {
 	base_characters: Map<string, BaseCharacter>
 	mods_combining: Map<string, Modifier>
 	mods_prefixal: Map<string, Modifier>
@@ -66,6 +68,7 @@ class Ruleset {
 			const cmds = {
 				'default': this.parse_meta_default,
 				'alias': this.parse_meta_alias,
+				'setalias': this.parse_meta_setalias,
 				'block': this.parse_meta_block
 			}
 
@@ -81,6 +84,7 @@ class Ruleset {
 		// but do validate defaults, now that they're loaded
 		this.feature_schema.validate_bundle(this.defaults)
 
+		// handle bulk of rules file (char / modifier defns)
 		for (let line_raw of lines) {
 			const line = this.tokenize_line(line_raw)
 			const cmd = line[0]
@@ -117,7 +121,12 @@ class Ruleset {
 
 		let bundle = this.parse_feature_list(line)
 		this.feature_schema.validate_bundle(bundle, `alias ${alias_name}`)
+		// TODO either merge or error if already exists
 		this.aliases.set(alias_name, bundle)
+	}
+
+	private parse_meta_setalias(line: string[]) {
+		// TODO
 	}
 
 	private parse_meta_block(line: string[]) {
@@ -125,23 +134,73 @@ class Ruleset {
 	}
 
 	private parse_base(line: string[]) {
+		const PARSE_ERROR = new Error(`Invalid base defn: ${line.join(' ')}`)
 
+		const base_char = line.shift()
+		if (!base_char) throw PARSE_ERROR
+		if (this.base_characters.has(base_char)) throw new Error(`Duplicate base defn: ${line.join(' ')}`)
+		if (line.shift() !== ':') throw PARSE_ERROR
+		if (line.length === 0) throw PARSE_ERROR
+		const features = this.parse_feature_list(line)
+		this.feature_schema.validate_bundle(features)
+
+		this.base_characters.set(base_char, {
+			klass: 'base',
+			glyph: base_char,
+			features
+		})
 	}
 
 	private parse_base_derived(line: string[]) {
+		throw new Error("derived bases aren't supported yet - wait for v2 or use aliases")
+	}
 
+	// well, I understand why lisp people talk about macros now
+	private _parse_mod(line: string[], klass: "combining" | "prefixal" | "suffixal") {
+		const PARSE_ERROR = new Error(`Invalid combining diacritic defn: ${line.join(' ')}`)
+
+		let glyph = line.shift()
+		if (!glyph) throw PARSE_ERROR
+		glyph = glyph.replace('◌','').replace('0','')
+		if (glyph.length === 0) throw PARSE_ERROR
+
+		let match_raw: string[] = []
+		let match_fval = line.shift()
+		while (match_fval !== ':') {
+			if (match_fval === undefined) throw PARSE_ERROR
+			match_raw.push(match_fval)
+			match_fval = line.shift()
+		}
+		if (match_raw.length === 0) throw PARSE_ERROR
+
+		// already consumed the colon
+		let match = this.parse_feature_list(match_raw)
+		let patch = this.parse_feature_list(line)
+
+		// @ts-ignore - I know what I'm about, son
+		if (!this[`mods_${klass}`].has(glyph)) {
+			// @ts-ignore
+			this[`mods_${klass}`].set(glyph, {
+				klass,
+				glyph,
+				rules: new Map()
+			})
+		}
+
+		// horrid
+		(((this as any)[`mods_${klass}`] as Map<string, Modifier>).get(glyph) as Modifier).rules.set(match, patch)
 	}
 
 	private parse_mod_combining(line: string[]) {
-
+		this._parse_mod(line, "combining")
 	}
 
 	private parse_mod_suffix(line: string[]) {
-
+		this._parse_mod(line, "suffixal")
 	}
 
 	private parse_mod_prefix(line: string[]) {
-
+		this._parse_mod(line, "prefixal")
 	}
 
 	private tokenize_line(line_raw: string) {
@@ -162,10 +221,16 @@ class Ruleset {
 		let bundle: FeatureBundle = new Map()
 		for (let f of features) {
 			// TODO handle alias references
-			let res = this.parse_feature(f)
+			let res = f[0] === RS_ALIAS ? this.parse_alias(f) : this.parse_feature(f) 
 			for (let k of res.keys()) bundle.set(k, res.get(k) as string)
 		}
 		return bundle
+	}
+
+	private parse_alias(aliasname: string): FeatureBundle {
+		let res = this.aliases.get(aliasname)
+		if (res === undefined) throw new Error(`Unknown alias ${res}`)
+		return res
 	}
 
 	// parse feature + value declaration, e.g. anterior:false or -anterior
@@ -192,19 +257,4 @@ class Ruleset {
 		res.set(fobj.name, fval)
 		return res
 	}
-}
-
-
-function parse_ruleset(path: string, feature_schema: FeatureSchema) {
-
-	// const parse_line = {
-	// 	[RS_META]: handle_meta,
-	// 	[RS_BASE]: handle_base,
-	// 	[RS_BASE_DERIVED]: handle_base_derived,
-	// 	[RS_MOD_COMBINING]: handle_mod_combining,
-	// 	[RS_MOD_SUFFIX]: handle_mod_suffix,
-	// 	[RS_MOD_PREFIX]: handle_mod_prefix
-	// }
-
-
 }

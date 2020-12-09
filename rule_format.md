@@ -20,7 +20,9 @@ For example, `__meta default fortis : false` sets the default value of `fortis` 
 
 ## alias
 
-`__meta alias {name} : [features]` sets aliases, which are like variables except immutable. Aliases can be used instead of feature values in glyph definitions, but must be prefixed with the sigil `*`. Alias definitions are hoisted in one step: base and modifier definitions can use alias definitions that appear later in the file, but other alias definitions can't.
+`__meta alias {name} : [features]` sets aliases, i.e. constants containing bundles of features. Aliases can be used instead of feature values in glyph definitions, but must be prefixed with the sigil `*`. 
+
+Alias definitions are hoisted in one step: base and modifier definitions can use alias definitions that appear later in the file, but other alias definitions can't.
 
 For example:
 ```

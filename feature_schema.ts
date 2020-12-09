@@ -43,7 +43,7 @@ import * as fs from 'fs'
 type Feature = {
 	name: string,
 	values: {
-		[value: string]: Array<Feature> | undefined // child features, or absent
+		[value: string]: Array<Feature> // child features, or absent
 	}
 }
 function get_children(feature: Feature) {
@@ -77,13 +77,13 @@ export type FeatureBundle = Map<string, string> // map of feature name to featur
 // Klass (not the reserved word 'class') determines the character class of the glyph:
 // - a base character (e.g. t)
 // - a combining modifier (e.g. ̪ as in t̪)
-// - a spacing modifier (e.g. ʰ as in tʰ)
+// - a suffixal modifier (e.g. ʰ as in tʰ)
 // - a prefixal modifier (e.g. ʰ as in ʰt)
 // Glyph is the character or character sequence itself. Glyphs need not be only a single character - theoretically,
-// /kp/ could be handled as a sequence of base character and spacing modifier, but it's much simpler and more intuitive
+// /kp/ could be handled as a sequence of base character and suffixal modifier, but it's much simpler and more intuitive
 // to treat /kp/ as a glyph that happens to consist of two codepoints.
 type GlyphBase = {
-	klass: "base" | "combining" | "spacing" | "prefixal",
+	klass: "base" | "combining" | "suffixal" | "prefixal",
 	glyph: string
 }
 
@@ -100,7 +100,7 @@ export type BaseCharacter = GlyphBase & {
 // rule ordering.
 // If the LHS doesn't ensure that all RHS features are reachable, that's a ~compile-time error.
 export type Modifier = GlyphBase & {
-	klass: "combining" | "spacing" | "prefixal",
+	klass: "combining" | "suffixal" | "prefixal",
 	rules: Map<FeatureBundle, FeatureBundle>
 }
 
@@ -117,7 +117,31 @@ export class FeatureSchema {
 	features_by_name: Map<string, Feature> // map from name of feature to feature
 	features_by_parent: Map<string, FeatureValue> // map from name of feature to {feature: parent, value: branch_to_child}
 
-	constructor(root_feature: Root) {
+	constructor(path: string) {
+		const raw: any = fs.readFileSync(path)
+		let data: any = JSON.parse(raw)
+	
+		const is_binary = true
+		const validate_feature = (feature: any, top_level = true) => {
+			if (!feature.hasOwnProperty('name')) throw new Error('Feature with no name')
+			if (!feature.hasOwnProperty('values')) throw new Error(`Feature with no values: ${feature.name}`)
+			if (!top_level && is_binary && !(
+				Object.keys(feature.values).length === 2 && 
+				feature.values.hasOwnProperty('+') && feature.values.hasOwnProperty('-'))
+			) throw new Error(`Non-binary feature: ${feature.name}`)
+			let descendants: any[] = []
+			for (let v in feature.values) descendants = descendants.concat(feature.values[v])
+			descendants.map(f => validate_feature(f, false))
+		}
+		data.map((f: any) => validate_feature(f))
+	
+		let root_feature: Root = {
+			name: 'Root',
+			values: {
+				'Features': data as Feature[]
+			}
+		}
+
 		this.raw_schema = root_feature
 
 		// build features_by_name
@@ -162,7 +186,7 @@ export class FeatureSchema {
 		return res
 	}
 
-	// Ensure that a modifier ruleset is well-formed: the LHS ensures that all RHS features are reachable.
+	// Ensure that a modifier rule is well-formed: the LHS ensures that all RHS features are reachable.
 	// For example, in Hayes-Prime, if the RHS sets [+anterior], the LHS must set [+coronal], because [±anterior] 
 	// is a descendant of [+coronal]: only [+coronal] segments can have the [±anterior] feature.
 	// For a feature value in RHS to be reachable, one of these things must hold:
@@ -172,34 +196,31 @@ export class FeatureSchema {
 	// - the LHS must contain the correct feature of its immediate descendant (e.g. +coronal -> +anterior)
 	// TODO: should also ensure that every possible feature in the tree has a value
 	// (apply feature bundle, generate base, validate base)
-	validate_modifier(modifier: Modifier) {
+	validate_modifier_rule(lhs_: FeatureBundle, rhs_: FeatureBundle, glyph: string) {
 		let root_children = new Set(this.raw_schema.values.Features.map(x => x.name))
- 
-		for (let rule of modifier.rules) {
-			console.log(JSON.stringify(rule))
-			const lhs = rule[0]
-			const rhs = rule[1]
 
-			// Any child of the root feature is always accessible, so we don't need to check.
-			let derived_rhs_features = rhs.filter(x => !root_children.has(x.feature.name))
-			// If the LHS and RHS are identical, we don't need to check.
-			const lhs_feature_names = new Set(lhs.map(x => x.feature.name))
-			derived_rhs_features = derived_rhs_features.filter(x => !lhs_feature_names.has(x.feature.name))
-			// If the LHS and RHS are siblings (have the same parent and the same descendance value), we don't need to check.
-			const lhs_feature_parents = new Set(lhs.map(x => this.get_parent(x.feature.name)))
-			derived_rhs_features = derived_rhs_features.filter(x =>
-				!lhs_feature_parents.has( this.get_parent(x.feature.name) )
-			)
+		const lhs = this.bundle_to_values(lhs_)
+		const rhs = this.bundle_to_values(rhs_)
 
-			// Otherwise, check to see if LHS contains a parent of RHS, with the right branch to RHS.
-			for (let derived_rhs_feature of derived_rhs_features) {
-				const rhs_parent = this.features_by_parent.get(derived_rhs_feature.feature.name)
-				if (rhs_parent === undefined) throw new Error("Undefined RHS parent (this should never happen)")
-				
-				if (!lhs.some(fval => 
-					fval.feature.name === rhs_parent.feature.name && fval.value === rhs_parent.value
-				)) throw new Error(`Invalid rule ${JSON.stringify(rule)} for ${modifier.glyph}`)
-			}
+		// Any child of the root feature is always accessible, so we don't need to check.
+		let derived_rhs_features = rhs.filter(x => !root_children.has(x.feature.name))
+		// If the LHS and RHS are identical, we don't need to check.
+		const lhs_feature_names = new Set(lhs.map(x => x.feature.name))
+		derived_rhs_features = derived_rhs_features.filter(x => !lhs_feature_names.has(x.feature.name))
+		// If the LHS and RHS are siblings (have the same parent and the same descendance value), we don't need to check.
+		const lhs_feature_parents = new Set(lhs.map(x => this.get_parent(x.feature.name)))
+		derived_rhs_features = derived_rhs_features.filter(x =>
+			!lhs_feature_parents.has( this.get_parent(x.feature.name) )
+		)
+
+		// Otherwise, check to see if LHS contains a parent of RHS, with the right branch to RHS.
+		for (let derived_rhs_feature of derived_rhs_features) {
+			const rhs_parent = this.features_by_parent.get(derived_rhs_feature.feature.name)
+			if (rhs_parent === undefined) throw new Error("Undefined RHS parent (this should never happen)")
+			
+			if (!lhs.some(fval => 
+				fval.feature.name === rhs_parent.feature.name && fval.value === rhs_parent.value
+			)) throw new Error(`Invalid rule ${JSON.stringify(lhs)} : ${JSON.stringify(rhs)} for ${glyph}`)
 		}
 	}
 
@@ -213,6 +234,7 @@ export class FeatureSchema {
 		let stack = top_level_features
 		while (stack.length > 0) {
 			let curr = stack.pop()
+			if (curr === undefined) throw new Error(`Invalid bundle: popped undefined (this should never happen)`)
 			let bundle_value = bundle.get(curr.name)
 			if (bundle_value === undefined) {
 				throw new Error(`Invalid bundle: missing ${curr.name} ${err_str ? `(${err_str})` : ''}`)
@@ -225,81 +247,67 @@ export class FeatureSchema {
 		}
 	}
 
+	bundle_to_values(bundle: FeatureBundle) {
+		let res: FeatureValue[] = []
+		for (let k of bundle.keys()) {
+			let feature = this.features_by_name.get(k)
+			if (feature === undefined) throw new Error(`Undefined feature ${k} in bundle_to_values`)
+			let value = bundle.get(k)
+			if (value === undefined || !feature.values.hasOwnProperty(value)) throw new Error(`Invalid feature/value pair ${k}/${value} in bundle_to_values`)
+			res.push({feature, value})
+		}
+		return res
+	}
+
 	apply_modifier(base: FeatureBundle, modifier: FeatureBundle) {
-		const keys = new Set( base.keys().concat(modifier.keys()) )
+		const keys = new Set( [...base.keys()].concat([...modifier.keys()]) )
 		let res: FeatureBundle = new Map()
 		for (let k of keys) {
 			let val: string
 			if (modifier.has(k)) {
-				res.set( k, modifier.get(k) )
+				res.set( k, modifier.get(k) as string )
 			} else {
-				res.set( k, base.get(k) )
+				let v = base.get(k)
+				if (v === undefined) throw new Error(`Couldn't find ${k} in apply_modifier`)
+				res.set( k, v )
 			}
 		}
-		validate_bundle(res, "Runtime error")
+		this.validate_bundle(res, "Runtime error")
 		return res
 	}
 }
 
-class Featuralizer {
-	// An unedited reference to the feature schema.
-	feature_schema: FeatureSchema
+// class Featuralizer {
+// 	// An unedited reference to the feature schema.
+// 	feature_schema: FeatureSchema
 
-	// Probably want to get everything defined here.
-	// Maybe later we'll have a factory function or something.
-	constructor(feature_schema: FeatureSchema) {
-		this.feature_schema = feature_schema
-	}
+// 	// Probably want to get everything defined here.
+// 	// Maybe later we'll have a factory function or something.
+// 	constructor(feature_schema: FeatureSchema) {
+// 		this.feature_schema = feature_schema
+// 	}
 
-	// Declare a feature schema, i.e. a specific model, such as PHOIBLE's "Hayes Prime".
-	load_feature_schema(_features: Root): void {
+// 	// Declare a feature schema, i.e. a specific model, such as PHOIBLE's "Hayes Prime".
+// 	load_feature_schema(_features: Root): void {
 		
-	}
+// 	}
 
-	// Declare a glyph rule. Insertion order matters: we'll standardize characters by reordering their components.
-	declare_glyph_rule(_rule: GlyphRule): void {
+// 	// Declare a glyph rule. Insertion order matters: we'll standardize characters by reordering their components.
+// 	declare_glyph_rule(_rule: GlyphRule): void {
 
-	}
+// 	}
 
-	// Parse a string into a sequence of glyphs.
-	parse(_glyph: string)/*: Array<string> */ {
+// 	// Parse a string into a sequence of glyphs.
+// 	parse(_glyph: string)/*: Array<string> */ {
 
-	}
+// 	}
 
-	// Normalize a glyph - reorder its components.
-	normalize(_glyph: Glyph)/*: string */ {
-	}
+// 	// Normalize a glyph - reorder its components.
+// 	normalize(_glyph: Glyph)/*: string */ {
+// 	}
 
-	// Transform a glyph (a sequence of characters) into a segment (a feature bundle).
-	featuralize(_glyph: string)/*: Segment */ {
-		// TODO
-	}
-}
-
-function parse_feature_schema(path: string): FeatureSchema {
-	const raw: any = fs.readFileSync(path)
-	let data: any = JSON.parse(raw)
-
-	const is_binary = true
-	const validate_feature = (feature: any, top_level = true) => {
-		if (!feature.hasOwnProperty('name')) throw new Error('Feature with no name')
-		if (!feature.hasOwnProperty('values')) throw new Error(`Feature with no values: ${feature.name}`)
-		if (!top_level && is_binary && !(
-			Object.keys(feature.values).length === 2 && 
-			feature.values.hasOwnProperty('+') && feature.values.hasOwnProperty('-'))
-		) throw new Error(`Non-binary feature: ${feature.name}`)
-		let descendants: any[] = []
-		for (let v in feature.values) descendants = descendants.concat(feature.values[v])
-		descendants.map(f => validate_feature(f, false))
-	}
-	data.map((f: any) => validate_feature(f))
-
-	const root: Root = {
-		name: 'Root',
-		values: {
-			'Features': data as Feature[]
-		}
-	}
-
-	return new FeatureSchema(root)
-}
+// 	// Transform a glyph (a sequence of characters) into a segment (a feature bundle).
+// 	featuralize(_glyph: string)/*: Segment */ {
+// 		// TODO
+// 	}
+// }

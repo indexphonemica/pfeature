@@ -22,11 +22,111 @@ const RS_ALIAS = '*' // must be one char since we check str[0]
 const FALSES = new Set( ['-', 'false'] )
 const TRUES = new Set( ['+', 'true'] )
 
+class UnitSegment {
+	base: string
+	prefixal_modifiers: Set<string>
+	combining_modifiers: Set<string>
+	suffixal_modifiers: Set<string>
+
+	constructor(props: {
+		base: string, 
+		prefixal_modifiers: Set<string>, 
+		combining_modifiers: Set<string>, 
+		suffixal_modifiers: Set<string> 
+	}) {
+		this.base = props.base
+		this.prefixal_modifiers = props.prefixal_modifiers
+		this.combining_modifiers = props.combining_modifiers
+		this.suffixal_modifiers = props.suffixal_modifiers
+	}
+
+	toString() {
+		const prefixes = [...this.prefixal_modifiers].join(',')
+		const combinings = [...this.combining_modifiers].map(x => `◌${x}`).join(',')
+		const suffixes = [...this.suffixal_modifiers].join(',')
+		return `(${prefixes} ${this.base} ${combinings} ${suffixes})`
+	}
+}
+
+class MergeSet<T> extends Set<T> {
+	constructor(...things: T[]) {
+		super()
+		this.merge(...things)
+	}
+
+	merge(...things: T[]) {
+		for (let thing of things) {
+			this.add(thing)
+		}
+	}
+}
+
+function merge<T>(s: Set<T>, ...ts: T[]) {
+	let ns: Set<T> = new Set(s)
+	for (let t of ts) ns.add(t)
+	return ns
+}
+
+class Segment {
+	units: UnitSegment[]
+	readonly str: string
+	prefix_queue: Set<string>
+
+	constructor(raw: string) {
+		this.str = raw
+		this.units = []
+		this.prefix_queue = new Set()
+	}
+
+	get curr() {
+		return this.units[this.units.length-1]
+	}
+
+	get base_count() {
+		return this.units.length
+	}
+
+	add_prefixes(prefixes: Set<string>) {
+		if (this.units.length === 0) {
+			this.prefix_queue = merge(this.prefix_queue, ...prefixes)
+		} else {
+			this.curr.prefixal_modifiers = merge(this.curr.prefixal_modifiers, ...prefixes)
+		}
+	}
+
+	add_base(base: string) {
+		let prefixes: Set<string> = (this.units.length === 0) ? this.prefix_queue : new Set()
+
+		this.units.push(new UnitSegment({
+			prefixal_modifiers: prefixes,
+			base,
+			combining_modifiers: new Set(),
+			suffixal_modifiers: new Set()
+		}))
+	}
+
+	add_combinings(combinings: Set<string>) {
+		this.curr.combining_modifiers = merge(this.curr.combining_modifiers, ...combinings)
+	}
+
+	add_suffixes(suffixes: Set<string>) {
+		this.curr.suffixal_modifiers = merge(this.curr.suffixal_modifiers, ...suffixes)
+	}
+
+	toString() {
+		return `${this.str} ( ${this.units.map(x => x.toString())} )`
+	}
+}
+
 export class Ruleset {
 	base_characters: Map<string, BaseCharacter>
-	mods_combining: Map<string, Modifier>
 	mods_prefixal: Map<string, Modifier>
+	mods_combining: Map<string, Modifier>
 	mods_suffixal: Map<string, Modifier>
+
+	mods_prefixal_order: Map<string, number>
+	mods_combining_order: Map<string, number>
+	mods_suffixal_order: Map<string, number>
 
 	feature_schema: FeatureSchema
 
@@ -40,8 +140,8 @@ export class Ruleset {
 		const lines = raw.split('\n').map(x => x.trim()).filter(x => x.length > 0)
 
 		this.base_characters = new Map()
-		this.mods_combining = new Map()
 		this.mods_prefixal = new Map()
+		this.mods_combining = new Map()
 		this.mods_suffixal = new Map()
 
 		this.defaults = new Map()
@@ -94,6 +194,11 @@ export class Ruleset {
 			// @ts-ignore - doesn't realize cmd must be in line_switch
 			line_switch[cmd](line.slice(1))
 		}
+
+		// now that we've loaded everything, generate orders so we can normalize with sort()
+		this.mods_prefixal_order = this.get_normalization_order(this.mods_prefixal)
+		this.mods_combining_order = this.get_normalization_order(this.mods_combining)
+		this.mods_suffixal_order = this.get_normalization_order(this.mods_suffixal)
 	}
 
 	private parse_meta_default(line: string[]) {
@@ -177,7 +282,7 @@ export class Ruleset {
 		let match = this.parse_feature_list(match_raw)
 		let patch = this.parse_feature_list(line)
 
-		// @ts-ignore - I know what I'm about, son
+		// @ts-ignore - I know what I'm about, son (TS can't resolve string interpolation and know that the property always exists)
 		if (!this[`mods_${klass}`].has(glyph)) {
 			// @ts-ignore
 			this[`mods_${klass}`].set(glyph, {
@@ -187,7 +292,8 @@ export class Ruleset {
 			})
 		}
 
-		// horrid
+		// the point of this trash fire is to allow the same string-interpolated property access trick as above
+		// without ts-ignoring the whole line
 		(((this as any)[`mods_${klass}`] as Map<string, Modifier>).get(glyph) as Modifier).rules.set(match, patch)
 	}
 
@@ -256,5 +362,90 @@ export class Ruleset {
 		let res: FeatureBundle = new Map()
 		res.set(fobj.name, fval)
 		return res
+	}
+
+	private _featuralize(segment: UnitSegment): FeatureBundle {
+		// Need to take some care here to handle multiple bases.
+		// As a first pass, I think this would be reasonable:
+		// - Affixal characters affect the whole segment.
+		// - Combining characters affect only the base component.
+		// Will also need some kind of coalescence rule.
+
+
+	}
+
+	// Get a numeric ordering of a diacritic class for use with sort().
+	private get_normalization_order(m: Map<string, unknown>) {
+		return new Map([...m.keys()].map( (str, i) => [str, i] ) )
+	}
+
+	featuralize_segment(segment_raw: string): Segment {
+		let segment: Segment = new Segment(segment_raw)
+		// -- Tokenize --
+		
+		// Read prefixal characters first
+		var {matches, remainder} = greedy_match(segment_raw, this.mods_prefixal)
+		segment.add_prefixes(matches)
+
+		do {
+			var last_remainder_length = remainder.length
+			var {matches, remainder} = greedy_match(remainder, this.base_characters)
+			let bases = matches // If we read multiple bases, there were no outstanding modifiers.
+			for (let b of bases) segment.add_base(b)
+			var {matches, remainder} = greedy_match(remainder, this.mods_combining)
+			segment.add_combinings(matches)
+			var {matches, remainder} = greedy_match(remainder, this.mods_suffixal)
+			segment.add_suffixes(matches)
+		} while (last_remainder_length !== remainder.length)
+		
+		if (segment.base_count === 0) throw new Error(`No base char found in segment ${segment}`)
+		if (remainder.length > 0) throw new Error(`Unable to fully featuralize segment ${segment} - remainder ${remainder}`)
+
+
+
+		
+	}
+}
+
+
+// If we have a multichar glyph, like IPA kp or ts or X-SAMPA r\`, we want to match the whole thing.
+// But if we hit a start value where we can't match anything, just terminate:
+//   everything before the remainder must be matched.
+// Completely naive and unoptimized implementation. Segments should be pretty short, so this shouldn't matter.
+function greedy_match(str: string, container: Set<string> | Map<string, unknown>) {
+	var set: Set<string>
+	if (container instanceof Set) {
+		set = container
+	} else if (container instanceof Map) {
+		set = new Set(container.keys())
+	} else {
+		throw new Error("Invalid type for greedy_match")
+	}
+
+	let res: Set<string> = new Set()
+
+    let max_known_end = 0
+	for (let start = 0; start < str.length; start++) {
+		max_known_end = start
+		for (let end = start+1; end <= str.length; end++) {
+            console.log(`${start} ${end} ${str.slice(start, end)}`)
+			if ( set.has( str.slice(start, end) ) ) {
+                console.log(`found ${str.slice(start, end)}`)
+				max_known_end = end
+			}
+		}
+		if (max_known_end > start) {
+			res.add( str.slice(start, max_known_end) )
+            res.add(`${str.slice(start, max_known_end)}`)
+            console.log(`here ${start} ${max_known_end} ${JSON.stringify(res.keys())}`)
+			start = max_known_end - 1
+		} else {
+			break
+		}
+	}
+
+	return {
+		matches: res,
+		remainder: str.slice(max_known_end)
 	}
 }

@@ -6,12 +6,10 @@
 # Defaults set with `__meta default` will hold until EOF.
 __meta default false : fortis constricted_glottis spread_glottis long stress tone
 
-# You can also define named block-level defaults.
-# Block commands are `set` (set a default), `remove` (remove a default), and `clear`.
-# We're going to define plosives first, so:
-__meta block set false : nasal approximant sonorant delayed_release syllabic trill tap lateral continuant
-__meta block set true  : consonantal 
-# Defaults and blocks only affect the definitions of base characters.
+# TODO document aliases
+__meta alias plosive : -nasal -approximant -sonorant -delayed_release -syllabic -trill -tap -lateral -continuant +consonantal
+
+
 
 # Define base characters with =.
 # +feature is shorthand for feature:+.

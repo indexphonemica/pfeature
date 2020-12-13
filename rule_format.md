@@ -44,6 +44,8 @@ For example, `= m : -approximant -clock +consonantal -constricted_glottis -conti
 
 Base characters may consist of more than one codepoint - e.g. /tɕ/ or /kp/.
 
+Base characters must not be defined as diacritics. (TODO enforce this)
+
 ## Derivations
 
 `=* {glyph} {glyph} : [features]` defines a base character as a derivation of another base character: the deltas to the right of `:` are applied to the second glyph to produce the feature bundle of the first glyph. (`derive` may be used as an alternative to `=*`.)

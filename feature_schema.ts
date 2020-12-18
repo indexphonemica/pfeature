@@ -160,7 +160,6 @@ export class FeatureSchema {
 			this.features_by_name.set(f.name, f)
 			for (let cf_value in f.values) {
 				let cf_descendants = f.values[cf_value]
-				console.log(cf_descendants)
 				for (let cf of cf_descendants) {
 					build_features_by_name(cf)
 				}

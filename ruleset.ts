@@ -359,7 +359,7 @@ export class Ruleset {
 	}
 
 	private parse_feature_list(features: string[]): FeatureBundle {
-		let bundle: FeatureBundle = new Map()
+		let bundle = new FeatureBundle()
 		for (let f of features) {
 			// TODO handle alias references
 			let res = f[0] === RS_ALIAS ? this.parse_alias(f) : this.parse_feature(f) 
@@ -395,7 +395,7 @@ export class Ruleset {
 		if (!fobj) this.err(`Nonexistent feature in ${fname_raw}: ${fname}`)
 		if (!fobj.values.hasOwnProperty(fval)) throw new Error(`Feature ${fname} doesn't have value ${fval}`)
 
-		let res: FeatureBundle = new Map()
+		let res = new FeatureBundle()
 		res.set(fobj.name, fval)
 		return res
 	}
@@ -431,7 +431,7 @@ export class Ruleset {
 	}
 
 	private modify_bundle(bundle: FeatureBundle, patch: FeatureBundle) {
-		let new_bundle: FeatureBundle = new Map(bundle)
+		let new_bundle = new FeatureBundle(bundle)
 		for (let [feature_name, value] of patch) {
 			new_bundle.set(feature_name, value)
 		}
@@ -440,7 +440,7 @@ export class Ruleset {
 
 	private apply_rule(rule: ModifierRule, bundle: FeatureBundle, rule_raw: string, segment_raw: string) {
 		let found_match = false
-		var found_rhs: FeatureBundle = new Map()
+		var found_rhs = new FeatureBundle()
 		for (let [lhs, rhs] of rule) {
 			if ( [...lhs].every( ([feature_name, value]) => bundle.get(feature_name) === value ) ) {
 				if (found_match) throw new Error(`Rule ${rule_raw} has multiple matches for ${segment_raw}`)

@@ -71,7 +71,7 @@ export type FeatureValue = {
 
 // Keep it simple and don't get into the quagmire of object comparison.
 export class FeatureBundle extends Map<string, string> { // map of feature name to feature value
-	constructor(args: Iterable<[string, string]>) { super(args) }
+	constructor(args?: Iterable<[string, string]>) { super(args || []) }
 
 	toString() {
 		let str = ''

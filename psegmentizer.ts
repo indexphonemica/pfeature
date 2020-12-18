@@ -15,6 +15,7 @@ export class Psegmentizer {
 
         for (let segment_raw of this.segments_raw.split('\n')) {
             let segment = segment_raw.trim()
+            if (segment.length === 0) continue
             this.segments_featuralized.set(segment_raw, this.ruleset.featuralize(segment))
         }
     }
@@ -22,7 +23,7 @@ export class Psegmentizer {
     write(_path: string) {
         // TODO output to actual file
         for (let [k, v] of this.segments_featuralized) {
-            console.log(`${k}: ${v}`)
+            console.log(k, v)
         }
     }
 }

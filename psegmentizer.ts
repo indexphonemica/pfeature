@@ -2,7 +2,7 @@ import { FeatureBundle } from './feature_schema'
 import { Ruleset } from './ruleset'
 import * as fs from 'fs'
 
-class Psegmentizer {
+export class Psegmentizer {
     segments_raw: string
     segments_featuralized: Map<string, FeatureBundle>
     ruleset: Ruleset

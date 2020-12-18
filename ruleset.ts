@@ -230,7 +230,7 @@ export class Ruleset {
 		this.mods_suffixal_order = this.get_normalization_order(this.mods_suffixal)
 	}
 
-	private err(str: string) {
+	private err(str: string): never {
 		throw new Error(`${str} (${this.curr_line})`)
 	}
 
@@ -346,6 +346,7 @@ export class Ruleset {
 	private tokenize_line(line_raw: string) {
 		// TODO should replace all whitespace because what if you have weird Unicode spaces
 		// TODO should handle mid-line comments here
+		line_raw = line_raw.split('#')[0]
 		return line_raw.replace('\t', ' ').split(' ').filter(x => x !== '').map(x => x.trim())
 	}
 
@@ -391,7 +392,7 @@ export class Ruleset {
 
 		// make sure the feature exists and has the value
 		let fobj = this.feature_schema.features_by_name.get(fname)
-		if (!fobj) throw new Error(`Nonexistent feature in ${fname_raw}: ${fname}`)
+		if (!fobj) this.err(`Nonexistent feature in ${fname_raw}: ${fname}`)
 		if (!fobj.values.hasOwnProperty(fval)) throw new Error(`Feature ${fname} doesn't have value ${fval}`)
 
 		let res: FeatureBundle = new Map()
@@ -505,16 +506,13 @@ function greedy_match(str: string, container: Set<string> | Map<string, unknown>
 	for (let start = 0; start < str.length; start++) {
 		max_known_end = start
 		for (let end = start+1; end <= str.length; end++) {
-            console.log(`${start} ${end} ${str.slice(start, end)}`)
 			if ( set.has( str.slice(start, end) ) ) {
-                console.log(`found ${str.slice(start, end)}`)
 				max_known_end = end
 			}
 		}
 		if (max_known_end > start) {
 			res.add( str.slice(start, max_known_end) )
             res.add(`${str.slice(start, max_known_end)}`)
-            console.log(`here ${start} ${max_known_end} ${JSON.stringify(res.keys())}`)
 			start = max_known_end - 1
 		} else {
 			break

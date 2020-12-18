@@ -237,6 +237,8 @@ export class FeatureSchema {
 	// For example, with Hayes-Prime, there must be a value for ±coronal, and if that value is +,
 	// there must be values for ±anterior, ±distributed, and ±strident.
 	// TODO test this at all
+	// TODO separate thing to test bundles that don't need to be comprehensive (aliases) - 
+	//      everything should be reachable but not everything needs to exist
 	validate_bundle(bundle: FeatureBundle, err_str?: string) {
 		const top_level_features = this.raw_schema.values.Features
 		let stack = top_level_features

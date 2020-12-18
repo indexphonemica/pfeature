@@ -154,11 +154,15 @@ export class Ruleset {
 	defaults: FeatureBundle
 	aliases: Map<string, FeatureBundle>
 
+	curr_line: number
+
 	constructor(path: string, feature_schema: FeatureSchema) {
 		this.feature_schema = feature_schema
 
 		const raw: string = fs.readFileSync(path, 'utf8')
-		const lines = raw.split('\n').map(x => x.trim()).filter(x => x.length > 0)
+		const lines = raw.split('\n').map(x => x.trim())
+		
+		this.curr_line = 0
 
 		this.base_characters = new Map()
 		this.mods_prefixal = new Map()
@@ -183,6 +187,7 @@ export class Ruleset {
 
 		// handle hoisted metas
 		for (let line_raw of lines) {
+			if (line_raw.length === 0) continue
 			const line = this.tokenize_line(line_raw)
 			const cmd = line[0]
 
@@ -199,14 +204,16 @@ export class Ruleset {
 				// @ts-ignore - doesn't realize meta must be in cmds (argh)
 				cmds[meta].call(this, line.slice(2))
 			}
+			this.curr_line++
 		}
 
 		// don't validate aliases - defining a 'coronal' alias that doesn't set anterior etc. is fine
-		// but do validate defaults, now that they're loaded
-		this.feature_schema.validate_bundle(this.defaults)
+		// TODO validate defaults with noncomprehensive bundle validation
 
 		// handle bulk of rules file (char / modifier defns)
+		this.curr_line = 0
 		for (let line_raw of lines) {
+			if (line_raw.length === 0) continue
 			const line = this.tokenize_line(line_raw)
 			const cmd = line[0]
 
@@ -214,12 +221,17 @@ export class Ruleset {
 			if ( !(cmd in line_switch) ) throw new Error(`Unknown command ${cmd})`)
 			// @ts-ignore - doesn't realize cmd must be in line_switch
 			line_switch[cmd].call(this, line.slice(1))
+			this.curr_line++
 		}
 
 		// now that we've loaded everything, generate orders so we can normalize with sort()
 		this.mods_prefixal_order = this.get_normalization_order(this.mods_prefixal)
 		this.mods_combining_order = this.get_normalization_order(this.mods_combining)
 		this.mods_suffixal_order = this.get_normalization_order(this.mods_suffixal)
+	}
+
+	private err(str: string) {
+		throw new Error(`${str} (${this.curr_line})`)
 	}
 
 	private parse_meta_default(line: string[]) {
@@ -233,8 +245,8 @@ export class Ruleset {
 			let feature_obj = this.feature_schema.features_by_name.get(feature_name)
 			if (!feature_obj) throw new Error(`Nonexistent feature ${feature_name} in default defn: ${line.join(' ')}`)
 			let feature_val = this.parse_feature_value(val)
-			if (!feature_obj.values[val]) throw new Error(`Feature ${feature_name} in default defn doesn't have value ${val}: ${line.join(' ')}`)
-			this.defaults.set(feature_name, val)
+			if (!feature_obj.values[feature_val]) throw new Error(`Feature ${feature_name} in default defn doesn't have value ${feature_val}: ${line.join(' ')}`)
+			this.defaults.set(feature_name, feature_val)
 		}
 	}
 
@@ -246,7 +258,7 @@ export class Ruleset {
 		if (line.shift() !== ':') throw PARSE_ERROR
 
 		let bundle = this.parse_feature_list(line)
-		this.feature_schema.validate_bundle(bundle, `alias ${alias_name}`)
+		// TODO some kind of validation here
 		// TODO either merge or error if already exists
 		this.aliases.set(alias_name, bundle)
 	}
@@ -269,7 +281,7 @@ export class Ruleset {
 		if (line.shift() !== ':') throw PARSE_ERROR
 		if (line.length === 0) throw PARSE_ERROR
 		const features = this.parse_feature_list(line)
-		this.feature_schema.validate_bundle(features)
+		this.feature_schema.validate_bundle(features, line.join(' '))
 
 		this.base_characters.set(base_char, {
 			klass: 'base',
@@ -356,8 +368,8 @@ export class Ruleset {
 	}
 
 	private parse_alias(aliasname: string): FeatureBundle {
-		let res = this.aliases.get(aliasname)
-		if (res === undefined) throw new Error(`Unknown alias ${res}`)
+		let res = this.aliases.get(aliasname.slice(1))
+		if (res === undefined) throw new Error(`Unknown alias ${aliasname}`)
 		return res
 	}
 

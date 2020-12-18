@@ -8,7 +8,8 @@
 		"+": [
 			{"name": "round", "values": {"+": [], "-": []}},
 			{"name": "labiodental", "values": {"+": [], "-": []}}
-		]
+        ],
+        "-": []
 	}},
 	{"name": "coronal", "values": {
 		"+": [

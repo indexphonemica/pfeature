@@ -1,0 +1,28 @@
+[
+    {"name": "voice", "values": {"+": [], "-": []}},
+
+    {"name": "nasal", "values": {"+": [], "-": []}},
+    {"name": "obstruent", "values": {"+": [], "-": []}},
+
+	{"name": "labial", "values": {
+		"+": [
+			{"name": "round", "values": {"+": [], "-": []}},
+			{"name": "labiodental", "values": {"+": [], "-": []}}
+		]
+	}},
+	{"name": "coronal", "values": {
+		"+": [
+			{"name": "anterior", "values": {"+": [], "-": []}},
+            {"name": "distributed", "values": {"+": [], "-": []}},
+            {"name": "strident", "values": {"+": [], "-": []}}
+		],
+		"-": []
+	}},
+	{"name": "dorsal", "values": {
+		"+": [
+			{"name": "front", "values": {"+": [], "-": [
+                {"name": "back", "values": {"+": [], "-": []}}
+            ]}}
+		]
+	}}
+]

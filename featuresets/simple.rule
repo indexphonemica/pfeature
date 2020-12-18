@@ -1,0 +1,84 @@
+# For testing purposes.
+
+__meta alias labial       : +labial -round -labiodental -coronal                        -dorsal
+__meta alias dental       : -labial                     +coronal +anterior +distributed -dorsal
+__meta alias alveolar     : -labial                     +coronal +anterior -distributed -dorsal
+__meta alias postalveolar : -labial                     +coronal -anterior +distributed -dorsal
+__meta alias retroflex    : -labial                     +coronal -anterior -distributed -dorsal
+__meta alias palatal      : -labial                     -coronal                        +dorsal +front
+__meta alias velar        : -labial                     -coronal                        +dorsal -front -back
+__meta alias uvular       : -labial                     -coronal                        +dorsal -front +back
+
+__meta alias plosive   : -nasal +obstruent
+__meta alias nasal     : +nasal -obstruent
+__meta alias fricative : -nasal -obstruent
+# prenasalized stops are +nasal +obstruent; prenasalized fricatives in this model are impossible
+
+= p : *labial    *plosive -voice
+= b : *labial    *plosive +voice
+= t : *alveolar  *plosive -voice -strident
+= d : *alveolar  *plosive +voice -strident
+= ʈ : *retroflex *plosive -voice -strident
+= ɖ : *retroflex *plosive +voice -strident
+= c : *palatal   *plosive -voice
+= ɟ : *palatal   *plosive +voice
+= k : *velar     *plosive -voice
+= g : *velar     *plosive +voice
+= q : *uvular    *plosive -voice
+= ɢ : *uvular    *plosive +voice
+
+= ts : *alveolar     *plosive -voice +strident
+= dz : *alveolar     *plosive +voice +strident
+= tʃ : *postalveolar *plosive -voice +strident
+= dʒ : *postalveolar *plosive +voice +strident
+= tʂ : *retroflex    *plosive -voice +strident
+= dʐ : *retroflex    *plosive +voice +strident
+
+= m : *labial    *nasal +voice
+= n : *alveolar  *nasal +voice
+= ɳ : *retroflex *nasal +voice
+= ɲ : *palatal   *nasal +voice
+= ŋ : *velar     *nasal +voice
+= ɴ : *uvular    *nasal +voice
+
+= ɸ : *labial    *fricative -voice
+= β : *labial    *fricative +voice
+= f : *labial    *fricative -voice +labiodental # overrides -labiodental in *labial - this should work
+= v : *labial    *fricative +voice +labiodental
+= θ : *dental    *fricative -voice -strident
+= ð : *dental    *fricative +voice -strident
+= s : *alveolar  *fricative -voice +strident
+= z : *alveolar  *fricative +voice +strident
+= ʂ : *retroflex *fricative -voice +strident
+= ʐ : *retroflex *fricative +voice +strident
+= ç : *palatal   *fricative -voice
+= ʝ : *palatal   *fricative +voice
+= x : *velar     *fricative -voice
+= ɣ : *velar     *fricative +voice
+= χ : *uvular    *fricative -voice
+= ʁ : *uvular    *fricative +voice
+
+# dental
+combin ◌̪ +anterior : +distributed   # alveolar -> dental
+combin ◌̪ +labial   : +labiodental
+
+# postalveolar (retracted) - or alveolar nonsibilant fricative
+combin ◌̠ *alveolar : *postalveolar
+combin ◌̠ *dental -strident : *alveolar
+
+# devoiced
+combin ◌̥ +voice : -voice
+
+# prenasalization (can only apply to plosives in this model)
+prefix ⁿ *plosive : +nasal
+
+# palatalization
+# *not* unconditional - palatalized palatals make no sense
+suffix ʲ -dorsal : +dorsal +front
+suffix ʲ -front  : +front
+
+# labialization 
+# no good way to write an unconditional rule - oh well
+suffix ʷ -labial : +labial +round
+suffix ʷ -round  : +round
+

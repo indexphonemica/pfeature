@@ -1,4 +1,4 @@
-import { BaseCharacter, FeatureBundle, FeatureSchema, FeatureValue, Modifier } from './feature_schema'
+import { BaseCharacter, FeatureBundle, FeatureSchema, FeatureValue, Modifier, ModifierRule } from './feature_schema'
 import * as fs from 'fs'
 
 const RS_COMMENT = '#'
@@ -9,11 +9,11 @@ const RS_BASE_FULL = 'base'
 const RS_BASE_DERIVED = '*='
 const RS_BASE_DERIVED_FULL = 'derive'
 
-const RS_MOD_COMBINING = '=='
+const RS_MOD_COMBINING = '^='
 const RS_MOD_COMBINING_FULL = 'combin'
-const RS_MOD_SUFFIX = '=+'
+const RS_MOD_SUFFIX = '=>'
 const RS_MOD_SUFFIX_FULL = 'suffix'
-const RS_MOD_PREFIX = '=-'
+const RS_MOD_PREFIX = '<='
 const RS_MOD_PREFIX_FULL = 'prefix'
 
 const RS_ALIAS = '*' // must be one char since we check str[0]
@@ -22,17 +22,21 @@ const RS_ALIAS = '*' // must be one char since we check str[0]
 const FALSES = new Set( ['-', 'false'] )
 const TRUES = new Set( ['+', 'true'] )
 
+type FeaturalizedSegment = Map<string, string | string[]>
+
+type SegmentModifiers = Set<string>
+
 class UnitSegment {
 	base: string
-	prefixal_modifiers: Set<string>
-	combining_modifiers: Set<string>
-	suffixal_modifiers: Set<string>
+	prefixal_modifiers: SegmentModifiers
+	combining_modifiers: SegmentModifiers
+	suffixal_modifiers: SegmentModifiers
 
 	constructor(props: {
 		base: string, 
-		prefixal_modifiers: Set<string>, 
-		combining_modifiers: Set<string>, 
-		suffixal_modifiers: Set<string> 
+		prefixal_modifiers: SegmentModifiers, 
+		combining_modifiers: SegmentModifiers, 
+		suffixal_modifiers: SegmentModifiers 
 	}) {
 		this.base = props.base
 		this.prefixal_modifiers = props.prefixal_modifiers
@@ -46,18 +50,20 @@ class UnitSegment {
 		const suffixes = [...this.suffixal_modifiers].join(',')
 		return `(${prefixes} ${this.base} ${combinings} ${suffixes})`
 	}
-}
 
-class MergeSet<T> extends Set<T> {
-	constructor(...things: T[]) {
-		super()
-		this.merge(...things)
-	}
+	get_normalized(prefix_order: Map<string, number>, combining_order: Map<string, number>, suffix_order: Map<string, number>) {
+		const compare_fn = (a: string, b: string, m: Map<string, number>) => (m.get(b) || -1) - (m.get(a) || -1) 
 
-	merge(...things: T[]) {
-		for (let thing of things) {
-			this.add(thing)
-		}
+		const new_prefixes = [...this.prefixal_modifiers].sort( (a, b) => compare_fn(a, b, prefix_order) )
+		const new_combinings = [...this.combining_modifiers].sort( (a, b) => compare_fn(a, b, combining_order) )
+		const new_suffixes = [...this.suffixal_modifiers].sort( (a, b) => compare_fn(a, b, suffix_order) )
+
+		return new UnitSegment({
+			base: this.base,
+			prefixal_modifiers: new Set(new_prefixes),
+			combining_modifiers: new Set(new_combinings),
+			suffixal_modifiers: new Set(new_suffixes)
+		})
 	}
 }
 
@@ -69,11 +75,11 @@ function merge<T>(s: Set<T>, ...ts: T[]) {
 
 class Segment {
 	units: UnitSegment[]
-	readonly str: string
-	prefix_queue: Set<string>
+	readonly raw: string
+	prefix_queue: SegmentModifiers
 
 	constructor(raw: string) {
-		this.str = raw
+		this.raw = raw
 		this.units = []
 		this.prefix_queue = new Set()
 	}
@@ -86,7 +92,7 @@ class Segment {
 		return this.units.length
 	}
 
-	add_prefixes(prefixes: Set<string>) {
+	add_prefixes(prefixes: SegmentModifiers) {
 		if (this.units.length === 0) {
 			this.prefix_queue = merge(this.prefix_queue, ...prefixes)
 		} else {
@@ -95,7 +101,7 @@ class Segment {
 	}
 
 	add_base(base: string) {
-		let prefixes: Set<string> = (this.units.length === 0) ? this.prefix_queue : new Set()
+		let prefixes: SegmentModifiers = (this.units.length === 0) ? this.prefix_queue : new Set()
 
 		this.units.push(new UnitSegment({
 			prefixal_modifiers: prefixes,
@@ -105,24 +111,39 @@ class Segment {
 		}))
 	}
 
-	add_combinings(combinings: Set<string>) {
+	add_combinings(combinings: SegmentModifiers) {
 		this.curr.combining_modifiers = merge(this.curr.combining_modifiers, ...combinings)
 	}
 
-	add_suffixes(suffixes: Set<string>) {
+	add_suffixes(suffixes: SegmentModifiers) {
 		this.curr.suffixal_modifiers = merge(this.curr.suffixal_modifiers, ...suffixes)
 	}
 
 	toString() {
-		return `${this.str} ( ${this.units.map(x => x.toString())} )`
+		return `${this.raw} ( ${this.units.map(x => x.toString())} )`
+	}
+
+	get_normalized(ruleset: Ruleset) {
+		return Segment.fromUnits(
+			this.units.map(x => x.get_normalized(ruleset.mods_prefixal_order, ruleset.mods_combining_order, ruleset.mods_suffixal_order)),
+			this.raw
+		)
+	}
+	
+	static fromUnits(units: UnitSegment[], raw: string) {
+		let res = new Segment(raw)
+		res.units = units
+		return res
 	}
 }
 
+type RulesetModifiers = Map<string, Modifier>
+
 export class Ruleset {
 	base_characters: Map<string, BaseCharacter>
-	mods_prefixal: Map<string, Modifier>
-	mods_combining: Map<string, Modifier>
-	mods_suffixal: Map<string, Modifier>
+	mods_prefixal: RulesetModifiers
+	mods_combining: RulesetModifiers
+	mods_suffixal: RulesetModifiers
 
 	mods_prefixal_order: Map<string, number>
 	mods_combining_order: Map<string, number>
@@ -176,7 +197,7 @@ export class Ruleset {
 				const meta = line[1]
 				if ( !(meta in cmds) ) throw new Error(`Unknown meta command ${meta}`)
 				// @ts-ignore - doesn't realize meta must be in cmds (argh)
-				cmds[meta](line.slice(2))
+				cmds[meta].call(this, line.slice(2))
 			}
 		}
 
@@ -192,7 +213,7 @@ export class Ruleset {
 			if ( (!cmd) || cmd === RS_COMMENT || cmd === RS_META ) continue
 			if ( !(cmd in line_switch) ) throw new Error(`Unknown command ${cmd})`)
 			// @ts-ignore - doesn't realize cmd must be in line_switch
-			line_switch[cmd](line.slice(1))
+			line_switch[cmd].call(this, line.slice(1))
 		}
 
 		// now that we've loaded everything, generate orders so we can normalize with sort()
@@ -211,7 +232,7 @@ export class Ruleset {
 		for (let feature_name of line) {
 			let feature_obj = this.feature_schema.features_by_name.get(feature_name)
 			if (!feature_obj) throw new Error(`Nonexistent feature ${feature_name} in default defn: ${line.join(' ')}`)
-			let feature_val = this.parse_feature_name(val)
+			let feature_val = this.parse_feature_value(val)
 			if (!feature_obj.values[val]) throw new Error(`Feature ${feature_name} in default defn doesn't have value ${val}: ${line.join(' ')}`)
 			this.defaults.set(feature_name, val)
 		}
@@ -232,6 +253,7 @@ export class Ruleset {
 
 	private parse_meta_setalias(line: string[]) {
 		// TODO
+		// what is this even for?
 	}
 
 	private parse_meta_block(line: string[]) {
@@ -312,11 +334,11 @@ export class Ruleset {
 	private tokenize_line(line_raw: string) {
 		// TODO should replace all whitespace because what if you have weird Unicode spaces
 		// TODO should handle mid-line comments here
-		return line_raw.replace('\t', ' ').split(' ').map(x => x.trim())
+		return line_raw.replace('\t', ' ').split(' ').filter(x => x !== '').map(x => x.trim())
 	}
 
 	// could stand to have a better name - handle binary longhand
-	private parse_feature_name<T extends string | undefined>(fname: T): T extends string ? string : undefined {
+	private parse_feature_value<T extends string | undefined>(fname: T): T extends string ? string : undefined {
 		if (fname === 'false') return '-' as any // sigh https://github.com/microsoft/TypeScript/issues/24929
 		if (fname === 'true') return '+' as any
 		if (fname === 'null') return '0' as any
@@ -340,6 +362,7 @@ export class Ruleset {
 	}
 
 	// parse feature + value declaration, e.g. anterior:false or -anterior
+	// TODO support commas
 	private parse_feature(fname_raw: string): FeatureBundle {
 		const fname_arr = fname_raw.split(':')
 		if (fname_arr.length > 2 || fname_arr.length === 0) throw new Error(`Invalid feature assignment: ${fname_raw}`)
@@ -347,16 +370,16 @@ export class Ruleset {
 		let fname: string
 		let fval: string
 		if (fname_arr.length === 1) { // binary featureset shorthand: +feature / -feature / 0feature
-			fname = fname_arr[0][1]
-			fval = fname_arr[0].slice(1)
+			fval = fname_arr[0][0]
+			fname = fname_arr[0].slice(1)
 		} else { // length 2 - feature:value
 			fname = fname_arr[0]
-			fval = this.parse_feature_name(fname_arr[1])
+			fval = this.parse_feature_value(fname_arr[1])
 		}
 
 		// make sure the feature exists and has the value
 		let fobj = this.feature_schema.features_by_name.get(fname)
-		if (!fobj) throw new Error(`Nonexistent feature: ${fname}`)
+		if (!fobj) throw new Error(`Nonexistent feature in ${fname_raw}: ${fname}`)
 		if (!fobj.values.hasOwnProperty(fval)) throw new Error(`Feature ${fname} doesn't have value ${fval}`)
 
 		let res: FeatureBundle = new Map()
@@ -364,24 +387,14 @@ export class Ruleset {
 		return res
 	}
 
-	private _featuralize(segment: UnitSegment): FeatureBundle {
-		// Need to take some care here to handle multiple bases.
-		// As a first pass, I think this would be reasonable:
-		// - Affixal characters affect the whole segment.
-		// - Combining characters affect only the base component.
-		// Will also need some kind of coalescence rule.
-
-
-	}
-
 	// Get a numeric ordering of a diacritic class for use with sort().
 	private get_normalization_order(m: Map<string, unknown>) {
 		return new Map([...m.keys()].map( (str, i) => [str, i] ) )
 	}
 
-	featuralize_segment(segment_raw: string): Segment {
+	// Returns *non-normalized* parsed/tokenized segment.
+	private parse_segment(segment_raw: string): Segment {
 		let segment: Segment = new Segment(segment_raw)
-		// -- Tokenize --
 		
 		// Read prefixal characters first
 		var {matches, remainder} = greedy_match(segment_raw, this.mods_prefixal)
@@ -401,9 +414,61 @@ export class Ruleset {
 		if (segment.base_count === 0) throw new Error(`No base char found in segment ${segment}`)
 		if (remainder.length > 0) throw new Error(`Unable to fully featuralize segment ${segment} - remainder ${remainder}`)
 
+		return segment
+	}
 
+	private modify_bundle(bundle: FeatureBundle, patch: FeatureBundle) {
+		let new_bundle: FeatureBundle = new Map(bundle)
+		for (let [feature_name, value] of patch) {
+			new_bundle.set(feature_name, value)
+		}
+		return new_bundle
+	}
 
-		
+	private apply_rule(rule: ModifierRule, bundle: FeatureBundle, rule_raw: string, segment_raw: string) {
+		let found_match = false
+		var found_rhs: FeatureBundle = new Map()
+		for (let [lhs, rhs] of rule) {
+			if ( [...lhs].every( ([feature_name, value]) => bundle.get(feature_name) === value ) ) {
+				if (found_match) throw new Error(`Rule ${rule_raw} has multiple matches for ${segment_raw}`)
+				found_match = true
+				found_rhs = rhs
+			}
+		}
+		if (!found_match) return bundle
+		return this.modify_bundle(bundle, found_rhs)
+	}
+
+	private featuralize_unit(unit: UnitSegment) {
+		let base_character = this.base_characters.get(unit.base)
+		if (base_character === undefined) throw new Error(`Unknown base character ${unit.base}`)
+		let bundle = base_character.features
+
+		for (let type of ['prefixal', 'combining', 'suffixal']) {
+			// @ts-ignore
+			let diacritics = unit[`${type}_modifiers`] as SegmentModifiers
+			// @ts-ignore
+			let mods = this[`mods_${type}`] as RulesetModifiers
+
+			for (let diacritic in diacritics) {
+				let mod = mods.get(diacritic)
+				if (mod === undefined) throw new Error(`Undefined rule for diacritic ${diacritic}`)
+				bundle = this.apply_rule(mod.rules, bundle, mod.glyph, unit.toString())
+			}
+		}
+
+		return bundle
+	}
+
+	// TODO:
+	// - normalization
+	//   - check to make sure normalization doesn't affect featuralization
+	// - handle segments composed of >1 UnitSegment
+	//   - have some kind of feature folding, or figure out how feature folding should be defined or whatever, 
+	featuralize(segment_raw: string) {
+		let segment = this.parse_segment(segment_raw)
+		let features = this.featuralize_unit(segment.units[0]) // lame lame lame fix later
+		return features
 	}
 }
 

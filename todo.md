@@ -1,0 +1,2 @@
+- no good way to write unconditional rules
+- probably don't want to be throwing errors everywhere - log errors and list all at once instead to avoid whackamole

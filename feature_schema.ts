@@ -70,7 +70,15 @@ export type FeatureValue = {
 }
 
 // Keep it simple and don't get into the quagmire of object comparison.
-export type FeatureBundle = Map<string, string> // map of feature name to feature value
+export class FeatureBundle extends Map<string, string> { // map of feature name to feature value
+	constructor(args: Iterable<[string, string]>) { super(args) }
+
+	toString() {
+		let str = ''
+		for (let [k, v] of this) str += `${k}:${v} `
+		return str
+	}
+}
 
 // Properties shared by all glyph rules.
 // A glyph rule maps *glyph components* (base characters or modifiers) to *segments* (feature bundles).
@@ -99,9 +107,10 @@ export type BaseCharacter = GlyphBase & {
 // application of multiple rules from a single diacritic would be reasonable. This also ensures the irrelevance of 
 // rule ordering.
 // If the LHS doesn't ensure that all RHS features are reachable, that's a ~compile-time error.
+export type ModifierRule = Map<FeatureBundle, FeatureBundle>
 export type Modifier = GlyphBase & {
 	klass: "combining" | "suffixal" | "prefixal",
-	rules: Map<FeatureBundle, FeatureBundle>
+	rules: ModifierRule
 }
 
 // A parsed glyph is an array of characters.

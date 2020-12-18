@@ -1,2 +1,7 @@
 - no good way to write unconditional rules
 - probably don't want to be throwing errors everywhere - log errors and list all at once instead to avoid whackamole
+- more typechecking and testing around that
+  - rules should make sure not to create impossible feature sets - if you remove a node you should also remove its children
+    - important for ternaries (e.g. high and low - +high +low is forbidden, so low can be a child of -high or vice versa)
+- noncomprehensive bundle checking
+- output to file

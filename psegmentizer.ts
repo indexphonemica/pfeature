@@ -16,7 +16,7 @@ export class Psegmentizer {
         for (let segment_raw of this.segments_raw.split('\n')) {
             let segment = segment_raw.trim()
             if (segment.length === 0) continue
-            this.segments_featuralized.set(segment_raw, this.ruleset.featuralize(segment))
+            this.segments_featuralized.set(segment, this.ruleset.featuralize(segment))
         }
     }
 

@@ -463,7 +463,7 @@ export class Ruleset {
 			// @ts-ignore
 			let mods = this[`mods_${type}`] as RulesetModifiers
 
-			for (let diacritic in diacritics) {
+			for (let diacritic of diacritics) {
 				let mod = mods.get(diacritic)
 				if (mod === undefined) throw new Error(`Undefined rule for diacritic ${diacritic}`)
 				bundle = this.apply_rule(mod.rules, bundle, mod.glyph, unit.toString())

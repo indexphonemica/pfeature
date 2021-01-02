@@ -1,5 +1,6 @@
 import { BaseCharacter, FeatureBundle, FeatureSchema, FeatureValue, Modifier, ModifierRule } from './feature_schema'
 import * as fs from 'fs'
+import { set_eq, warn } from './util'
 
 const RS_COMMENT = '#'
 const RS_META = '__meta'
@@ -52,7 +53,9 @@ class UnitSegment {
 	}
 
 	get_normalized(prefix_order: Map<string, number>, combining_order: Map<string, number>, suffix_order: Map<string, number>) {
-		const compare_fn = (a: string, b: string, m: Map<string, number>) => (m.get(b) || -1) - (m.get(a) || -1) 
+		const compare_fn = (a: string, b: string, m: Map<string, number>) => { 
+			return (m.get(a) || -1) - (m.get(b) || -1) 
+		}
 
 		const new_prefixes = [...this.prefixal_modifiers].sort( (a, b) => compare_fn(a, b, prefix_order) )
 		const new_combinings = [...this.combining_modifiers].sort( (a, b) => compare_fn(a, b, combining_order) )
@@ -64,6 +67,19 @@ class UnitSegment {
 			combining_modifiers: new Set(new_combinings),
 			suffixal_modifiers: new Set(new_suffixes)
 		})
+	}
+
+	is_normalized(prefix_order: Map<string, number>, combining_order: Map<string, number>, suffix_order: Map<string, number>) {
+		let norm = this.get_normalized(prefix_order, combining_order, suffix_order)
+		return this.eq(norm)
+	}
+
+	eq(s: UnitSegment) {
+		if ( this.base !== s.base ) return false
+		if ( !set_eq(this.prefixal_modifiers,  s.prefixal_modifiers)  ) return false
+		if ( !set_eq(this.combining_modifiers, s.combining_modifiers) ) return false
+		if ( !set_eq(this.suffixal_modifiers,  s.suffixal_modifiers)  ) return false
+		return true
 	}
 }
 
@@ -128,6 +144,12 @@ class Segment {
 			this.units.map(x => x.get_normalized(ruleset.mods_prefixal_order, ruleset.mods_combining_order, ruleset.mods_suffixal_order)),
 			this.raw
 		)
+	}
+
+	is_normalized(ruleset: Ruleset) {
+		let norm = this.get_normalized(ruleset)
+		if (norm.units.length !== this.units.length) return false
+		return this.units.every( (unit, i) => unit.eq(norm.units[i]) )
 	}
 	
 	static fromUnits(units: UnitSegment[], raw: string) {
@@ -480,6 +502,11 @@ export class Ruleset {
 	//   - have some kind of feature folding, or figure out how feature folding should be defined or whatever, 
 	featuralize(segment_raw: string) {
 		let segment = this.parse_segment(segment_raw)
+
+		if (!segment.is_normalized(this)) {
+			warn(`${segment} not normalized: normal form ${segment.get_normalized(this)}`)
+		}
+
 		let features = this.featuralize_unit(segment.units[0]) // lame lame lame fix later
 		return features
 	}

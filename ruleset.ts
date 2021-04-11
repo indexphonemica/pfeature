@@ -191,7 +191,7 @@ export class Ruleset {
 		this.mods_combining = new Map()
 		this.mods_suffixal = new Map()
 
-		this.defaults = new Map()
+		this.defaults = new FeatureBundle()
 		this.aliases = new Map()
 
 		const line_switch = {
@@ -503,11 +503,18 @@ export class Ruleset {
 	featuralize(segment_raw: string) {
 		let segment = this.parse_segment(segment_raw)
 
+		const do_feat = (s: Segment) => this.featuralize_unit(s.units[0]) // lame, fix later
+
+		let features = do_feat(segment)
+
 		if (!segment.is_normalized(this)) {
-			warn(`${segment} not normalized: normal form ${segment.get_normalized(this)}`)
+			let norm = segment.get_normalized(this)
+			warn(`${segment} not normalized: normal form ${norm}`)
+			if ( !features.eq(do_feat(norm)) ) {
+				warn(`  Normalization affects featuralization! This is probably Very Bad.`)
+			}
 		}
 
-		let features = this.featuralize_unit(segment.units[0]) // lame lame lame fix later
 		return features
 	}
 }

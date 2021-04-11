@@ -78,6 +78,14 @@ export class FeatureBundle extends Map<string, string> { // map of feature name 
 		for (let [k, v] of this) str += `${k}:${v} `
 		return str
 	}
+
+	eq(f: FeatureBundle) {
+		if (this.size !== f.size) return false
+		for (let k of this.keys()) {
+			if (this.get(k) !== f.get(k)) return false
+		}
+		return true
+	}
 }
 
 // Properties shared by all glyph rules.
@@ -271,7 +279,7 @@ export class FeatureSchema {
 
 	apply_modifier(base: FeatureBundle, modifier: FeatureBundle) {
 		const keys = new Set( [...base.keys()].concat([...modifier.keys()]) )
-		let res: FeatureBundle = new Map()
+		let res: FeatureBundle = new FeatureBundle()
 		for (let k of keys) {
 			let val: string
 			if (modifier.has(k)) {

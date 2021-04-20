@@ -3,7 +3,7 @@ import { Ruleset } from './ruleset'
 import { Psegmentizer } from './psegmentizer'
 import { print_warnings } from './util'
 
-// read these from the command line at some point
+// TODO read these from the command line at some point
 const features_path = 'featuresets/simple.json'
 const rules_path    = 'featuresets/simple.rule'
 const segments_path = 'featuresets/simple.segs'

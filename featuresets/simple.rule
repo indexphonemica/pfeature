@@ -79,6 +79,7 @@ suffix ʲ -front  : +front
 
 # labialization 
 # no good way to write an unconditional rule - oh well
+# Actually it's fine that there's no good way to write an unconditional rule - unconditional rules rarely make sense.
 suffix ʷ -labial : +labial +round
 suffix ʷ -round  : +round
 

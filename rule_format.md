@@ -34,7 +34,7 @@ p : *bilabial *plosive -voice
 b : *bilabial *plosive +voice
 ```
 
-You can also use `__meta setalias {name} {value} : {features}`, similarly to the `default` command.
+You can also use `__meta setalias {name} {value} : {features}`, similarly to the `default` command. (TODO: not implemented yet)
 
 # Base characters 
 

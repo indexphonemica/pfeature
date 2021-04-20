@@ -20,9 +20,11 @@ const RS_MOD_PREFIX_FULL = 'prefix'
 const RS_ALIAS = '*' // must be one char since we check str[0]
 
 // aliases for binary feature support
+// TODO unused
 const FALSES = new Set( ['-', 'false'] )
 const TRUES = new Set( ['+', 'true'] )
 
+// TODO unused
 type FeaturalizedSegment = Map<string, string | string[]>
 
 type SegmentModifiers = Set<string>
@@ -231,6 +233,7 @@ export class Ruleset {
 
 		// don't validate aliases - defining a 'coronal' alias that doesn't set anterior etc. is fine
 		// TODO validate defaults with noncomprehensive bundle validation
+		//      ^ what does this mean?
 
 		// handle bulk of rules file (char / modifier defns)
 		this.curr_line = 0
@@ -372,7 +375,7 @@ export class Ruleset {
 		return line_raw.replace('\t', ' ').split(' ').filter(x => x !== '').map(x => x.trim())
 	}
 
-	// could stand to have a better name - handle binary longhand
+	// This function translates binary longhand for feature values (and could stand to have a better name)
 	private parse_feature_value<T extends string | undefined>(fname: T): T extends string ? string : undefined {
 		if (fname === 'false') return '-' as any // sigh https://github.com/microsoft/TypeScript/issues/24929
 		if (fname === 'true') return '+' as any
@@ -384,6 +387,7 @@ export class Ruleset {
 		let bundle = new FeatureBundle()
 		for (let f of features) {
 			// TODO handle alias references
+			// ^ what does this mean?
 			let res = f[0] === RS_ALIAS ? this.parse_alias(f) : this.parse_feature(f) 
 			for (let k of res.keys()) bundle.set(k, res.get(k) as string)
 		}
@@ -397,7 +401,7 @@ export class Ruleset {
 	}
 
 	// parse feature + value declaration, e.g. anterior:false or -anterior
-	// TODO support commas
+	// TODO support commas (once featural contours are supported)
 	private parse_feature(fname_raw: string): FeatureBundle {
 		const fname_arr = fname_raw.split(':')
 		if (fname_arr.length > 2 || fname_arr.length === 0) throw new Error(`Invalid feature assignment: ${fname_raw}`)

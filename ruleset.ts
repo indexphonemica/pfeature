@@ -516,11 +516,11 @@ export class Ruleset {
 	// - normalization
 	//   - check to make sure normalization doesn't affect featuralization
 	// - handle segments composed of >1 UnitSegment
-	//   - have some kind of feature folding, or figure out how feature folding should be defined or whatever, 
+	//   - have some kind of feature folding, or figure out how feature folding should be defined or whatever
 	featuralize(segment_raw: string) {
 		let segment = this.parse_segment(segment_raw)
 
-		const do_feat = (s: Segment) => this.featuralize_unit(s.units[0]) // lame, fix later
+		const do_feat = (s: Segment) => this.featuralize_unit(s.units[0]) // FIXME
 
 		let features = do_feat(segment)
 

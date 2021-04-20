@@ -163,6 +163,9 @@ class Segment {
 
 type RulesetModifiers = Map<string, Modifier>
 
+// The Ruleset parses .rule files in relation to a defined feature schema, and exposes a function to
+// featuralize a segment.
+
 export class Ruleset {
 	base_characters: Map<string, BaseCharacter>
 	mods_prefixal: RulesetModifiers
@@ -234,6 +237,7 @@ export class Ruleset {
 		// don't validate aliases - defining a 'coronal' alias that doesn't set anterior etc. is fine
 		// TODO validate defaults with noncomprehensive bundle validation
 		//      ^ what does this mean?
+		//      ^ validate defaults in the same way as aliases (anything defined must be reachable)
 
 		// handle bulk of rules file (char / modifier defns)
 		this.curr_line = 0
@@ -255,6 +259,7 @@ export class Ruleset {
 		this.mods_suffixal_order = this.get_normalization_order(this.mods_suffixal)
 	}
 
+	// TODO errors thrown from ruleset should really use this
 	private err(str: string): never {
 		throw new Error(`${str} (${this.curr_line})`)
 	}
@@ -315,6 +320,7 @@ export class Ruleset {
 		})
 	}
 
+	// What is a derived base?
 	private parse_base_derived(line: string[]) {
 		throw new Error("derived bases aren't supported yet - wait for v2 or use aliases")
 	}
@@ -371,6 +377,7 @@ export class Ruleset {
 	private tokenize_line(line_raw: string) {
 		// TODO should replace all whitespace because what if you have weird Unicode spaces
 		// TODO should handle mid-line comments here
+		//      ^ doesn't this handle mid-line comments already?
 		line_raw = line_raw.split('#')[0]
 		return line_raw.replace('\t', ' ').split(' ').filter(x => x !== '').map(x => x.trim())
 	}
@@ -384,7 +391,7 @@ export class Ruleset {
 	}
 
 	private parse_feature_list(features: string[]): FeatureBundle {
-		let bundle = new FeatureBundle()
+		let bundle = new FeatureBundle([...this.defaults])
 		for (let f of features) {
 			// TODO handle alias references
 			// ^ what does this mean?
@@ -411,9 +418,11 @@ export class Ruleset {
 		if (fname_arr.length === 1) { // binary featureset shorthand: +feature / -feature / 0feature
 			fval = fname_arr[0][0]
 			fname = fname_arr[0].slice(1)
-		} else { // length 2 - feature:value
+		} else if (fname_arr.length === 2) { // feature:value
 			fname = fname_arr[0]
 			fval = this.parse_feature_value(fname_arr[1])
+		} else {
+			throw new Error(`Invalid feature + value combination ${fname_raw}`)
 		}
 
 		// make sure the feature exists and has the value
@@ -425,6 +434,10 @@ export class Ruleset {
 		res.set(fobj.name, fval)
 		return res
 	}
+
+	// -----------------------------
+	// -- Segment featuralization --
+	// -----------------------------
 
 	// Get a numeric ordering of a diacritic class for use with sort().
 	private get_normalization_order(m: Map<string, unknown>) {

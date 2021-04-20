@@ -1,18 +1,30 @@
 # For testing purposes.
 
-__meta alias labial       : +labial -round -labiodental -coronal                        -dorsal
-__meta alias dental       : -labial                     +coronal +anterior +distributed -dorsal
-__meta alias alveolar     : -labial                     +coronal +anterior -distributed -dorsal
-__meta alias postalveolar : -labial                     +coronal -anterior +distributed -dorsal
-__meta alias retroflex    : -labial                     +coronal -anterior -distributed -dorsal
-__meta alias palatal      : -labial                     -coronal                        +dorsal +front
-__meta alias velar        : -labial                     -coronal                        +dorsal -front -back
-__meta alias uvular       : -labial                     -coronal                        +dorsal -front +back
+__meta alias labial       : +labial -round -labiodental -coronal                        -dorsal              +consonantal
+__meta alias dental       : -labial                     +coronal +anterior +distributed -dorsal              +consonantal
+__meta alias alveolar     : -labial                     +coronal +anterior -distributed -dorsal              +consonantal
+__meta alias postalveolar : -labial                     +coronal -anterior +distributed -dorsal              +consonantal
+__meta alias retroflex    : -labial                     +coronal -anterior -distributed -dorsal              +consonantal
+__meta alias palatal      : -labial                     -coronal                        +dorsal +front       +consonantal
+__meta alias velar        : -labial                     -coronal                        +dorsal -front -back +consonantal
+__meta alias uvular       : -labial                     -coronal                        +dorsal -front +back +consonantal
 
 __meta alias plosive   : -nasal +obstruent
 __meta alias nasal     : +nasal -obstruent
 __meta alias fricative : -nasal -obstruent
 # prenasalized stops are +nasal +obstruent; prenasalized fricatives in this model are impossible
+
+__meta alias vowel   : -coronal +dorsal -consonantal +syllabic
+__meta alias front   :          +dorsal +front -back
+__meta alias central :          +dorsal -front -back
+__meta alias back    :          +dorsal -front +back
+__meta alias low     :                  -consonantal -high +low
+__meta alias mid     :                  -consonantal -high -low
+__meta alias high    :                  -consonantal +high -low
+__meta alias rounded : +labial +round
+__meta alias unrounded : -labial
+
+__meta default false : syllabic
 
 = p : *labial    *plosive -voice
 = b : *labial    *plosive +voice
@@ -57,6 +69,13 @@ __meta alias fricative : -nasal -obstruent
 = ɣ : *velar     *fricative +voice
 = χ : *uvular    *fricative -voice
 = ʁ : *uvular    *fricative +voice
+
+= a : *low *central *unrounded *vowel
+= e : *mid *front *unrounded *vowel
+= o : *mid *back *rounded *vowel
+= i : *high *front *unrounded *vowel
+= u : *high *back *rounded *vowel
+combin ◌̯ +syllabic : -syllabic
 
 # dental
 combin ◌̪ +anterior : +distributed   # alveolar -> dental

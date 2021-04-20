@@ -26,5 +26,12 @@
             ]}}
         ],
         "-": []
-	}}
+	}},
+	{"name": "consonantal", "values": {
+		"+": [], "-": [
+			{"name": "high", "values": {"+": [], "-": []}},
+			{"name": "low", "values": {"+": [], "-": []}}
+		]
+	}},
+	{"name": "syllabic", "values": {"+": [], "-": []}}
 ]

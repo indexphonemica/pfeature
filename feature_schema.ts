@@ -46,6 +46,8 @@ type Feature = {
 		[value: string]: Array<Feature> // child features, or absent
 	}
 }
+
+// TODO unused
 function get_children(feature: Feature) {
 	let res: Map<string, Feature> = new Map()
 	for (let value_name in feature.values) {
@@ -122,8 +124,10 @@ export type Modifier = GlyphBase & {
 }
 
 // A parsed glyph is an array of characters.
+// TODO unused
 type Glyph = Array<string>
 
+// TODO unused
 type Segment = {
 	glyph: string,
 	features: FeatureBundle
@@ -247,6 +251,7 @@ export class FeatureSchema {
 	// TODO test this at all
 	// TODO separate thing to test bundles that don't need to be comprehensive (aliases) - 
 	//      everything should be reachable but not everything needs to exist
+	// FIXME defaults are not taken into account here
 	validate_bundle(bundle: FeatureBundle, err_str?: string) {
 		const top_level_features = this.raw_schema.values.Features
 		let stack = top_level_features

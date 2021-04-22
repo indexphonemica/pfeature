@@ -154,6 +154,7 @@ class Segment {
 		return this.units.every( (unit, i) => unit.eq(norm.units[i]) )
 	}
 	
+	// FIXME this should generate a new raw representation
 	static fromUnits(units: UnitSegment[], raw: string) {
 		let res = new Segment(raw)
 		res.units = units
@@ -517,6 +518,12 @@ export class Ruleset {
 	//   - check to make sure normalization doesn't affect featuralization
 	// - handle segments composed of >1 UnitSegment
 	//   - have some kind of feature folding, or figure out how feature folding should be defined or whatever
+	//     Feature folding should probably be handled separately - there's no one true way to do it.
+	//     Maybe a feature folding module or definition. Needs to be able to handle non-binary feature models as well...
+	//     (for example, /ai̯/ is a low central to high front diphthong)
+	//     Also handle IPHON usage where we don't double diacritics, so /a̤i̯/ is breathy the whole way through but not written like it
+	//     (Or possibly we should just drop the usage. How should /a̤a̰/ (chon1284-1) be handled? Possibly this is a concern for the
+	//     feature model, though.)
 	featuralize(segment_raw: string) {
 		let segment = this.parse_segment(segment_raw)
 

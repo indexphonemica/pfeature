@@ -21,7 +21,7 @@ __meta alias plosive : -nasal -approximant -sonorant -delayed_release -syllabic 
 =   q : -labial -coronal +dorsal   -voice   -front +back -high -low
 =   ʔ : -labial -coronal -dorsal   -voice   +constricted_glottis     # Overriding defaults is fine.
 
-# Derive base characters from other characters with =>.
+# Derive base characters from other characters with *=.
 *=	b p : +voice
 *=	d t : +voice
 *=	ɟ c : +voice

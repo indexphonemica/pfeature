@@ -506,10 +506,8 @@ export class Ruleset {
 		if (base_character === undefined) throw new Error(`Unknown base character ${unit.base}`)
 		let bundle = base_character.features
 
-		for (let type of ['prefixal', 'combining', 'suffixal']) {
-			// @ts-ignore
+		for (let type of ['prefixal', 'combining', 'suffixal'] as const) {
 			let diacritics = unit[`${type}_modifiers`] as SegmentModifiers
-			// @ts-ignore
 			let mods = this[`mods_${type}`] as RulesetModifiers
 
 			for (let diacritic of diacritics) {

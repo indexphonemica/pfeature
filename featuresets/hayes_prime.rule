@@ -15,7 +15,7 @@ __meta alias plosive : -nasal -approximant -sonorant -delayed_release -syllabic 
 # +feature is shorthand for feature:+.
 # You can't leave features undetermined - for example, if you have +coronal, you have to define values for anterior, distributed, and strident.
 =	p : +labial -coronal -dorsal   -voice   -labiodental -round
-=	t : labial +coronal -dorsal   -voice   +anterior -distributed -strident
+=	t : -labial +coronal -dorsal   -voice   +anterior -distributed -strident
 =   c : -labial -coronal +dorsal   -voice   +front -back +high -low  # For simplicity's sake. PHOIBLE defines palatals as coronal.
 =   k : -labial -coronal +dorsal   -voice   -front -back +high -low
 =   q : -labial -coronal +dorsal   -voice   -front +back -high -low

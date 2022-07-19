@@ -1,4 +1,4 @@
-// cares about insertion order, doesn't try to recurse
+/** Test two sets for equality. Cares about insertion order; doesn't try to recurse. */
 export function set_eq(s1: Set<unknown>, s2: Set<unknown>) {
     if (s1.size !== s2.size) return false
     let s1_arr = [...s1]
@@ -10,6 +10,7 @@ export function set_eq(s1: Set<unknown>, s2: Set<unknown>) {
 }
 
 let warnings: string[] = []
+/** Add a warning to the `warnings` array, which is printable with `print_warnings()`. */
 export function warn(txt: string) {
     warnings.push(txt)
 }

@@ -2,9 +2,9 @@ import { FeatureBundle } from './feature_schema'
 import { Ruleset } from './ruleset'
 import * as fs from 'fs'
 
-// The Psegmentizer is responsible for loading lists of segments and telling the Ruleset to featuralize each one.
-// Someday it will also generate statistics for the whole segment list, for example to print warnings for distinct
-//   segments with identical featuralizations.
+/** The Psegmentizer is responsible for loading lists of segments and telling the Ruleset to featuralize each one.
+ * Someday it will also generate statistics for the whole segment list, for example to print warnings for distinct
+ *   segments with identical featuralizations. */
 export class Psegmentizer {
     segments_raw: string
     segments_featuralized: Map<string, FeatureBundle>
@@ -23,6 +23,7 @@ export class Psegmentizer {
         }
     }
 
+    /** Writes the list of featuralized segments to a file. */
     write(_path: string) {
         // TODO output to actual file
         for (let [k, v] of this.segments_featuralized) {

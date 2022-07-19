@@ -29,6 +29,9 @@ type FeaturalizedSegment = Map<string, string | string[]>
 
 type SegmentModifiers = Set<string>
 
+/**
+ * A unit segment is a single complete bundle of features (a representation of a segment) without any temporal dimension.
+ */
 class UnitSegment {
 	base: string
 	prefixal_modifiers: SegmentModifiers
@@ -47,6 +50,7 @@ class UnitSegment {
 		this.suffixal_modifiers = props.suffixal_modifiers
 	}
 
+	/** For debugging. */
 	toString() {
 		const prefixes = [...this.prefixal_modifiers].join(',')
 		const combinings = [...this.combining_modifiers].map(x => `◌${x}`).join(',')
@@ -54,6 +58,9 @@ class UnitSegment {
 		return `(${prefixes} ${this.base} ${combinings} ${suffixes})`
 	}
 
+	/** Creates a new UnitSegment with the same modifiers as this one, but in normalized order as specified by 
+	 *  the three order map args. 
+	 */
 	get_normalized(prefix_order: Map<string, number>, combining_order: Map<string, number>, suffix_order: Map<string, number>) {
 		const compare_fn = (a: string, b: string, m: Map<string, number>) => { 
 			return (m.get(a) || -1) - (m.get(b) || -1) 
@@ -102,10 +109,12 @@ class Segment {
 		this.prefix_queue = new Set()
 	}
 
+	/** The rightmost UnitSegment in this Segment. */
 	get curr() {
 		return this.units[this.units.length-1]
 	}
 
+	/** The number of UnitSegments in this Segment. */
 	get base_count() {
 		return this.units.length
 	}
@@ -155,6 +164,7 @@ class Segment {
 	}
 	
 	// FIXME this should generate a new raw representation
+	// why?
 	static fromUnits(units: UnitSegment[], raw: string) {
 		let res = new Segment(raw)
 		res.units = units
@@ -164,9 +174,9 @@ class Segment {
 
 type RulesetModifiers = Map<string, Modifier>
 
-// The Ruleset parses .rule files in relation to a defined feature schema, and exposes a function to
-// featuralize a segment.
-
+/** The Ruleset parses .rule files in relation to a defined feature schema, and exposes a function to
+  * featuralize a segment.
+  */
 export class Ruleset {
 	base_characters: Map<string, BaseCharacter>
 	mods_prefixal: RulesetModifiers
@@ -348,9 +358,7 @@ export class Ruleset {
 		let match = this.parse_feature_list(match_raw)
 		let patch = this.parse_feature_list(line)
 
-		// @ts-ignore - I know what I'm about, son (TS can't resolve string interpolation and know that the property always exists)
 		if (!this[`mods_${klass}`].has(glyph)) {
-			// @ts-ignore
 			this[`mods_${klass}`].set(glyph, {
 				klass,
 				glyph,
@@ -379,6 +387,7 @@ export class Ruleset {
 		// TODO should replace all whitespace because what if you have weird Unicode spaces
 		// TODO should handle mid-line comments here
 		//      ^ doesn't this handle mid-line comments already?
+		// TODO get a test suite
 		line_raw = line_raw.split('#')[0]
 		return line_raw.replace('\t', ' ').split(' ').filter(x => x !== '').map(x => x.trim())
 	}

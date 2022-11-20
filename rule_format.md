@@ -44,7 +44,7 @@ For example, `= m : -approximant -clock +consonantal -constricted_glottis -conti
 
 Base characters may consist of more than one codepoint - e.g. /tɕ/ or /kp/.
 
-Base characters must not be defined as diacritics. (TODO enforce this)
+Base characters must not be defined as diacritics. (TODO enforce this) (TODO how?)
 
 ## Derivations
 
@@ -54,7 +54,7 @@ For example, `= m̥ m : -voice` defines /m̥/ as a voiceless /m/.
 
 # Diacritics
 
-There are three types of diacritic: prefixal, suffixal, and combining. In the complex glyph <ⁿt̠ʰ>, the IPA representation of a prenasalized aspirated voiceless postalveolar plosive, <ⁿ> is a prefixal diacritic, <ʰ> is a suffixal diacritic, and the underdash ◌̠ is a combining diacritic. The three types are defined differently.
+There are three types of diacritic: prefixal, suffixal, and combining. In the complex glyph <ⁿt̠ʰ>, the IPA representation of a prenasalized aspirated voiceless postalveolar plosive, <ⁿ> is a prefixal diacritic, <ʰ> is a suffixal diacritic, and the underdash <◌̠> is a combining diacritic. The three types are defined differently.
 
 PFEATURE normalizes complex glyphs - that is, it ensures that diacritics in the output appear in a consistent order. The order is inferred from the order of definition: if `ʲ` is defined before `ʰ` in the rules file, `pʰʲ` in the input will be rewritten to `pʲʰ` in the output.
 
@@ -90,6 +90,6 @@ Suffixal modifiers are those which appear after the base character rule.
 
 # Binary feature shorthand
 
-For a binary featureset, `+` is treated as equivalent to `true`, and `-` is treated as equivalent to `false`. It is also possible to use `-name` as shorthand for `name:-` or `name:false`.
+For a binary featureset, `+` is treated as equivalent to `true`, and `-` is treated as equivalent to `false`. It is also possible to use `-name` as shorthand for `name:-` or `name:false`. (TODO: is this true?)
 
 A similar shortcut should probably exist for `0` and `null`, but doesn't yet.

@@ -1,45 +1,45 @@
 import * as fs from 'fs'
 
-//  A Feature is the basic element of featuralization.
-//  It has a name and a map of values. This lets us accommodate both UPSID-style descriptive features and PHOIBLE-style
-//  binary features.
-//  - In the UPSID style:
-//    - the name is a feature slot (e.g. "place") 
-//    - the values are the things that can occur in that slot (e.g. "labial", "coronal", etc.)
-//  - In the PHOIBLE style:
-//    - the name is a binary feature (e.g. "coronal")
-//    - the values are '+' and '-'
-//  Values are keys on the `values` object; this lets us model dependent features. For example, in PHOIBLE's
-//  "Hayes-Prime" model, the feature "fortis" is only applicable to +consonantal segments. We can model this as follows:
-//  {
-//    name: "consonantal",
-//    values: {
-//      "+": [
-//        {
-//          name: "fortis",
-//          values: { "+": [], "-": [] }
-//        }
-//      ],
-//      "-": []
-//    }
-//  }
-//
-// Feature models are defined on a Root node with a single value called "Features". For a simple example:
-// {
-//    name: "Root",
-//    values: {
-//      "Features": [
-//        {
-//          name: "place",
-//          values: { "labial" [], "coronal": ["dental", "alveolar", "postalveolar"], "velar": [] }
-//        }, {
-//          name: "manner",
-//          values: { "plosive": [], "fricative": [], "nasal": [] }
-//        }
-//      ]
-//    }
-// }
-
+/**  A Feature is the basic element of featuralization.
+ *  It has a name and a map of values. This lets us accommodate both UPSID-style descriptive features and PHOIBLE-style
+ *  binary features.
+ *  - In the UPSID style:
+ *    - the name is a feature slot (e.g. "place") 
+ *    - the values are the things that can occur in that slot (e.g. "labial", "coronal", etc.)
+ *  - In the PHOIBLE style:
+ *    - the name is a binary feature (e.g. "coronal")
+ *    - the values are '+' and '-'
+ *  Values are keys on the `values` object; this lets us model dependent features. For example, in PHOIBLE's
+ *  "Hayes-Prime" model, the feature "fortis" is only applicable to +consonantal segments. We can model this as follows:
+ *  {
+ *    name: "consonantal",
+ *    values: {
+ *      "+": [
+ *        {
+ *          name: "fortis",
+ *          values: { "+": [], "-": [] }
+ *        }
+ *      ],
+ *      "-": []
+ *    }
+ *  }
+ *
+ * Feature models are defined on a Root node with a single value called "Features". For a simple example:
+ * {
+ *    name: "Root",
+ *    values: {
+ *      "Features": [
+ *        {
+ *          name: "place",
+ *          values: { "labial" [], "coronal": ["dental", "alveolar", "postalveolar"], "velar": [] }
+ *        }, {
+ *          name: "manner",
+ *          values: { "plosive": [], "fricative": [], "nasal": [] }
+ *        }
+ *      ]
+ *    }
+ * }
+ */
 type Feature = {
 	name: string,
 	values: {
@@ -58,7 +58,7 @@ function get_children(feature: Feature) {
 	return res
 }
 
-// Since features are a tree, we define a root node.
+/** Features are a tree, so there must be a root node. */
 type Root = Feature & {
 	name: "Root",
 	values: {
@@ -90,16 +90,18 @@ export class FeatureBundle extends Map<string, string> { // map of feature name 
 	}
 }
 
-// Properties shared by all glyph rules.
-// A glyph rule maps *glyph components* (base characters or modifiers) to *segments* (feature bundles).
-// Klass (not the reserved word 'class') determines the character class of the glyph:
-// - a base character (e.g. t)
-// - a combining modifier (e.g. ̪ as in t̪)
-// - a suffixal modifier (e.g. ʰ as in tʰ)
-// - a prefixal modifier (e.g. ʰ as in ʰt)
-// Glyph is the character or character sequence itself. Glyphs need not be only a single character - theoretically,
-// /kp/ could be handled as a sequence of base character and suffixal modifier, but it's much simpler and more intuitive
-// to treat /kp/ as a glyph that happens to consist of two codepoints.
+/** Properties shared by all glyph rules.
+ * A glyph rule maps *glyph components* (base characters or modifiers) to *segments* (feature bundles).
+ * `klass` (not the reserved word 'class') determines the character class of the glyph:
+ * - a base character (e.g. t)
+ * - a combining modifier (e.g. ̪ as in t̪)
+ * - a suffixal modifier (e.g. ʰ as in tʰ)
+ * - a prefixal modifier (e.g. ʰ as in ʰt)
+ * 
+ * `glyph` is the character or character sequence itself. Glyphs need not be only a single character - theoretically,
+ * /kp/ could be handled as a sequence of base character and suffixal modifier, but it's much simpler and more intuitive
+ * to treat /kp/ as a glyph that happens to consist of two codepoints.
+ */
 type GlyphBase = {
 	klass: "base" | "combining" | "suffixal" | "prefixal",
 	glyph: string
@@ -111,12 +113,13 @@ export type BaseCharacter = GlyphBase & {
 	features: FeatureBundle
 }
 
-// When a diacritic is featuralized, it's tested orderlessly against every LHS rule; if the segment under
-// featuralization matches a LHS, the RHS patch of features is applied.
-// If multiple rules match, this should throw a runtime type error; I don't think there are any cases in which
-// application of multiple rules from a single diacritic would be reasonable. This also ensures the irrelevance of 
-// rule ordering.
-// If the LHS doesn't ensure that all RHS features are reachable, that's a ~compile-time error.
+/** When a diacritic is featuralized, it's tested orderlessly against every LHS rule; if the segment under
+ * featuralization matches a LHS, the RHS patch of features is applied.
+ * If multiple rules match, this should throw a runtime type error; I don't think there are any cases in which
+ * application of multiple rules from a single diacritic would be reasonable. This also ensures the irrelevance of 
+ * rule ordering within a modifier.
+ * If the LHS doesn't ensure that all RHS features are reachable, that's a ~compile-time error.
+ */
 export type ModifierRule = Map<FeatureBundle, FeatureBundle>
 export type Modifier = GlyphBase & {
 	klass: "combining" | "suffixal" | "prefixal",
@@ -135,8 +138,12 @@ type Segment = {
 
 export class FeatureSchema {
 	raw_schema: Root
-	features_by_name: Map<string, Feature> // map from name of feature to feature
-	features_by_parent: Map<string, FeatureValue> // map from name of feature to {feature: parent, value: branch_to_child}
+
+	/** Map from name of feature to feature. */
+	features_by_name: Map<string, Feature>
+
+	/** Map from name of feature to `{feature: parent, value: branch_to_child}1. */
+	features_by_parent: Map<string, FeatureValue>
 
 	constructor(path: string) {
 		const raw: any = fs.readFileSync(path)
@@ -194,28 +201,32 @@ export class FeatureSchema {
 		build_features_by_parent(root_feature)
 	}
 	
-	// Get a feature by name.
+	/** Get a feature by name. */
 	get(name: string) {
 		const res = this.features_by_name.get(name)
 		if (res === undefined) throw new Error(`Undefined get for ${name}`)
 		return res
 	}
+	/** Get a feature by parent. */
 	get_parent(name: string) {
 		const res = this.features_by_parent.get(name)
 		if (res === undefined) throw new Error(`Undefined get_parent for ${name}`)
 		return res
 	}
 
-	// Ensure that a modifier rule is well-formed: the LHS ensures that all RHS features are reachable.
-	// For example, in Hayes-Prime, if the RHS sets [+anterior], the LHS must set [+coronal], because [±anterior] 
-	// is a descendant of [+coronal]: only [+coronal] segments can have the [±anterior] feature.
-	// For a feature value in RHS to be reachable, one of these things must hold:
-	// - its feature must be an immediate descendant of root (not "derived")  (e.g. root -> +long)
-	// - the RHS feature is also the LHS feature                              (e.g. -labiodental -> +labiodental)
-	// - the RHS is a sibling of LHS                                          (e.g. +anterior -> +distributed)
-	// - the LHS must contain the correct feature of its immediate descendant (e.g. +coronal -> +anterior)
-	// TODO: should also ensure that every possible feature in the tree has a value
-	// (apply feature bundle, generate base, validate base)
+	/** Ensure that a modifier rule is well-formed: the LHS ensures that all RHS features are reachable.
+	 * For example, in Hayes-Prime, if the RHS sets [+anterior], the LHS must set [+coronal], because [±anterior] 
+	 * is a descendant of [+coronal]: only [+coronal] segments can have the [±anterior] feature.
+	 * For a feature value in RHS to be reachable, one of these things must hold:
+	 * - its feature must be an immediate descendant of root (not "derived")  (e.g. root -> +long)
+	 * - the RHS feature is also the LHS feature                              (e.g. -labiodental -> +labiodental)
+	 * - the RHS is a sibling of LHS                                          (e.g. +anterior -> +distributed)
+	 * - the LHS must contain the correct feature of its immediate descendant (e.g. +coronal -> +anterior)
+	 * 
+	 * TODO: should also ensure that every possible feature in the tree has a value
+	 * (apply feature bundle, generate base, validate base)
+	 * ^ TODO: What does this mean?
+	 */
 	validate_modifier_rule(lhs_: FeatureBundle, rhs_: FeatureBundle, glyph: string) {
 		let root_children = new Set(this.raw_schema.values.Features.map(x => x.name))
 

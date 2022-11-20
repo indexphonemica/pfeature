@@ -15,5 +15,5 @@ export function warn(txt: string) {
     warnings.push(txt)
 }
 export function print_warnings() {
-    for (let i of warnings) console.log(i) // TODO should probably write to file instead
+    for (let i of warnings) console.warn(i) // TODO should probably write to file instead
 }

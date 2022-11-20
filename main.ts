@@ -12,6 +12,7 @@ const schema = new FeatureSchema(features_path)
 const rules  = new Ruleset(rules_path, schema)
 const segments = new Psegmentizer(segments_path, rules)
 
+// Eventually this will take a filename to write the results out to. But for now we just log them.
 segments.write('foo')
 
 print_warnings()

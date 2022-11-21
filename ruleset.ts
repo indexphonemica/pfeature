@@ -19,10 +19,12 @@ const RS_MOD_PREFIX_FULL = 'prefix'
 
 const RS_ALIAS = '*' // must be one char since we check str[0]
 
-// aliases for binary feature support
-// TODO unused
-const FALSES = new Set( ['-', 'false'] )
-const TRUES = new Set( ['+', 'true'] )
+const RS_FVAL_FALSE = '-'
+const RS_FVAL_FALSE_FULL = 'false'
+const RS_FVAL_TRUE = '+'
+const RS_FVAL_TRUE_FULL = 'true'
+const RS_FVAL_NULL = '0'
+const RS_FVAL_NULL_FULL = 'null'
 
 // TODO unused
 type FeaturalizedSegment = Map<string, string | string[]>
@@ -62,8 +64,10 @@ class UnitSegment {
 	 *  the three order map args. 
 	 */
 	get_normalized(prefix_order: Map<string, number>, combining_order: Map<string, number>, suffix_order: Map<string, number>) {
-		const compare_fn = (a: string, b: string, m: Map<string, number>) => { 
-			return (m.get(a) || -1) - (m.get(b) || -1) 
+		const compare_fn = (a: string, b: string, m: Map<string, number>) => {
+			if (!m.has(a)) throw new Error(`Couldn't find order info for ${a}`)
+			if (!m.has(b)) throw new Error(`Couldn't find order info for ${b}`)
+			return m.get(a)! - m.get(b)!
 		}
 
 		const new_prefixes = [...this.prefixal_modifiers].sort( (a, b) => compare_fn(a, b, prefix_order) )
@@ -366,9 +370,7 @@ export class Ruleset {
 			})
 		}
 
-		// the point of this trash fire is to allow the same string-interpolated property access trick as above
-		// without ts-ignoring the whole line
-		(((this as any)[`mods_${klass}`] as Map<string, Modifier>).get(glyph) as Modifier).rules.set(match, patch)
+		this[`mods_${klass}`].get(glyph)!.rules.set(match, patch)
 	}
 
 	private parse_mod_combining(line: string[]) {
@@ -394,9 +396,9 @@ export class Ruleset {
 
 	// This function translates binary longhand for feature values (and could stand to have a better name)
 	private parse_feature_value<T extends string | undefined>(fname: T): T extends string ? string : undefined {
-		if (fname === 'false') return '-' as any // sigh https://github.com/microsoft/TypeScript/issues/24929
-		if (fname === 'true') return '+' as any
-		if (fname === 'null') return '0' as any
+		if (fname === RS_FVAL_FALSE_FULL) return RS_FVAL_FALSE as any // sigh https://github.com/microsoft/TypeScript/issues/24929
+		if (fname === RS_FVAL_TRUE_FULL) return RS_FVAL_TRUE as any
+		if (fname === RS_FVAL_NULL_FULL) return RS_FVAL_NULL as any
 		return fname as any
 	}
 

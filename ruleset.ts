@@ -395,11 +395,11 @@ export class Ruleset {
 	}
 
 	// This function translates binary longhand for feature values (and could stand to have a better name)
-	private parse_feature_value<T extends string | undefined>(fname: T): T extends string ? string : undefined {
-		if (fname === RS_FVAL_FALSE_FULL) return RS_FVAL_FALSE as any // sigh https://github.com/microsoft/TypeScript/issues/24929
-		if (fname === RS_FVAL_TRUE_FULL) return RS_FVAL_TRUE as any
-		if (fname === RS_FVAL_NULL_FULL) return RS_FVAL_NULL as any
-		return fname as any
+	private parse_feature_value(fname: string): string {
+		if (fname === RS_FVAL_FALSE_FULL) return RS_FVAL_FALSE
+		if (fname === RS_FVAL_TRUE_FULL) return RS_FVAL_TRUE
+		if (fname === RS_FVAL_NULL_FULL) return RS_FVAL_NULL
+		return fname
 	}
 
 	private parse_feature_list(features: string[]): FeatureBundle {
@@ -422,7 +422,7 @@ export class Ruleset {
 	// parse feature + value declaration, e.g. anterior:false or -anterior
 	// TODO support commas (once featural contours are supported)
 	private parse_feature(fname_raw: string): FeatureBundle {
-		const fname_arr = fname_raw.split(':')
+		const fname_arr = fname_raw.split(':') as [string] | [string, string] | [] // Typescript will complain if we don't do `| []`, but it's fine with the other check
 		if (fname_arr.length > 2 || fname_arr.length === 0) throw new Error(`Invalid feature assignment: ${fname_raw}`)
 
 		let fname: string

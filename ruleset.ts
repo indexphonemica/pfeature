@@ -422,12 +422,13 @@ export class Ruleset {
 	// parse feature + value declaration, e.g. anterior:false or -anterior
 	// TODO support commas (once featural contours are supported)
 	private parse_feature(fname_raw: string): FeatureBundle {
-		const fname_arr = fname_raw.split(':') as [string] | [string, string] | [] // Typescript will complain if we don't do `| []`, but it's fine with the other check
+		const fname_arr = fname_raw.split(':') as [string] | [string, string] | [] // Typescript will complain if we don't do `| []`, but it's fine with the other length check
 		if (fname_arr.length > 2 || fname_arr.length === 0) throw new Error(`Invalid feature assignment: ${fname_raw}`)
 
 		let fname: string
 		let fval: string
 		if (fname_arr.length === 1) { // binary featureset shorthand: +feature / -feature / 0feature
+			// It looks like it's technically possible to define arbitrary single-char features! This doesn't mean it's a good idea, however.
 			fval = fname_arr[0][0]
 			fname = fname_arr[0].slice(1)
 		} else if (fname_arr.length === 2) { // feature:value

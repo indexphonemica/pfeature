@@ -126,16 +126,6 @@ export type Modifier = GlyphBase & {
 	rules: ModifierRule
 }
 
-// A parsed glyph is an array of characters.
-// TODO unused
-type Glyph = Array<string>
-
-// TODO unused
-type Segment = {
-	glyph: string,
-	features: FeatureBundle
-}
-
 export class FeatureSchema {
 	raw_schema: Root
 

@@ -60,6 +60,13 @@ class UnitSegment {
 		return `(${prefixes} ${this.base} ${combinings} ${suffixes})`
 	}
 
+	get raw() {
+		const prefixes = [...this.prefixal_modifiers].join('')
+		const combinings = [...this.combining_modifiers].map(x => `◌${x}`).join('')
+		const suffixes = [...this.suffixal_modifiers].join('')
+		return `${prefixes}${this.base}${combinings}${suffixes}`
+	}
+
 	/** Creates a new UnitSegment with the same modifiers as this one, but in normalized order as specified by 
 	 *  the three order map args. 
 	 */
@@ -104,11 +111,11 @@ function merge<T>(s: Set<T>, ...ts: T[]) {
 
 class Segment {
 	units: UnitSegment[]
-	readonly raw: string
+	#raw: string
 	prefix_queue: SegmentModifiers
 
 	constructor(raw: string) {
-		this.raw = raw
+		this.#raw = raw
 		this.units = []
 		this.prefix_queue = new Set()
 	}
@@ -151,13 +158,13 @@ class Segment {
 	}
 
 	toString() {
-		return `${this.raw} ( ${this.units.map(x => x.toString())} )`
+		return `${this.#raw} ( ${this.units.map(x => x.toString())} )`
 	}
 
 	get_normalized(ruleset: Ruleset) {
 		return Segment.fromUnits(
 			this.units.map(x => x.get_normalized(ruleset.mods_prefixal_order, ruleset.mods_combining_order, ruleset.mods_suffixal_order)),
-			this.raw
+			this.#raw
 		)
 	}
 
@@ -166,8 +173,11 @@ class Segment {
 		if (norm.units.length !== this.units.length) return false
 		return this.units.every( (unit, i) => unit.eq(norm.units[i]) )
 	}
+
+	get raw() {
+		return this.units.map(x=>x.raw).join('')
+	}
 	
-	// FIXME this should generate a new raw representation
 	static fromUnits(units: UnitSegment[], raw: string) {
 		let res = new Segment(raw)
 		res.units = units

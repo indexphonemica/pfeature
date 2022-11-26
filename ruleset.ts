@@ -1,4 +1,4 @@
-import { BaseCharacter, FeatureBundle, FeatureSchema, FeatureValue, Modifier, ModifierRule } from './feature_schema'
+import { BaseCharacter, FeatureBundle, FeatureSchema, TemporalFeatureBundle, Modifier, ModifierRule } from './feature_schema'
 import * as fs from 'fs'
 import { set_eq, warn } from './util'
 
@@ -547,12 +547,11 @@ export class Ruleset {
 		// Rudimentary feature folding.
 		const features_arr: FeatureBundle[] = segment.units.map( unit => this.featuralize_unit(unit) )
 		
-		const features = features_arr[0] // FIXME
+		const features = TemporalFeatureBundle.fromArray(features_arr)
 
 		if (!segment.is_normalized(this)) {
 			let norm = segment.get_normalized(this)
 			warn(`${segment} not normalized: normal form ${norm}`)
-			// FIXME: no way to go from a normalized segment to a raw string
 			if ( !features.eq(this.featuralize(norm.raw)) ) {
 				warn(`  Normalization affects featuralization! This is probably Very Bad.`)
 			}

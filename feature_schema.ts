@@ -90,6 +90,34 @@ export class FeatureBundle extends Map<string, string> { // map of feature name 
 	}
 }
 
+export class TemporalFeatureBundle extends Map<string, string[]> {
+	constructor(args?: Iterable<[string, string[]]>) { super(args || [])}
+
+	toString() {
+		let str = ''
+		for (let [k, v] of this) str += `${k}:${v.join(',')}`
+		return str
+	}
+
+	eq(f: TemporalFeatureBundle) {
+		if (this.size !== f.size) return false
+		for (let k of this.keys()) {
+			const k1 = this.get(k)
+			const k2 = f.get(k)
+			if (!k1 || !k2 || k1.length !== k2.length) return false
+			for (let i = 0; i < k1.length; i++)
+				if (k1[i] !== k2[i]) return false
+		}
+		return true
+	}
+
+	/** Handles feature folding. */
+	static fromArray(arr: FeatureBundle[]): TemporalFeatureBundle {
+		// TODO
+		throw Error('Not implemented yet!')
+	}
+}
+
 /** Properties shared by all glyph rules.
  * A glyph rule maps *glyph components* (base characters or modifiers) to *segments* (feature bundles).
  * `klass` (not the reserved word 'class') determines the character class of the glyph:

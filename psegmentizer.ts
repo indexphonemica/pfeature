@@ -1,4 +1,4 @@
-import { FeatureBundle } from './feature_schema'
+import { TemporalFeatureBundle } from './feature_schema'
 import { Ruleset } from './ruleset'
 import * as fs from 'fs'
 
@@ -7,7 +7,7 @@ import * as fs from 'fs'
  *   segments with identical featuralizations. */
 export class Psegmentizer {
     segments_raw: string
-    segments_featuralized: Map<string, FeatureBundle>
+    segments_featuralized: Map<string, TemporalFeatureBundle>
     ruleset: Ruleset
 
     constructor (path: string, ruleset: Ruleset) {

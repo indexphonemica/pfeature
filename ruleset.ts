@@ -168,7 +168,6 @@ class Segment {
 	}
 	
 	// FIXME this should generate a new raw representation
-	// why?
 	static fromUnits(units: UnitSegment[], raw: string) {
 		let res = new Segment(raw)
 		res.units = units
@@ -524,8 +523,6 @@ export class Ruleset {
 	}
 
 	// TODO:
-	// - normalization
-	//   - check to make sure normalization doesn't affect featuralization
 	// - handle segments composed of >1 UnitSegment
 	//   - have some kind of feature folding, or figure out how feature folding should be defined or whatever
 	//     Feature folding should probably be handled separately - there's no one true way to do it.
@@ -537,14 +534,16 @@ export class Ruleset {
 	featuralize(segment_raw: string) {
 		let segment = this.parse_segment(segment_raw)
 
-		const do_feat = (s: Segment) => this.featuralize_unit(s.units[0]) // FIXME
-
-		let features = do_feat(segment)
+		// Rudimentary feature folding.
+		const features_arr: FeatureBundle[] = segment.units.map( unit => this.featuralize_unit(unit) )
+		
+		const features = features_arr[0] // FIXME
 
 		if (!segment.is_normalized(this)) {
 			let norm = segment.get_normalized(this)
 			warn(`${segment} not normalized: normal form ${norm}`)
-			if ( !features.eq(do_feat(norm)) ) {
+			// FIXME: no way to go from a normalized segment to a raw string
+			if ( !features.eq(this.featuralize(norm.raw)) ) {
 				warn(`  Normalization affects featuralization! This is probably Very Bad.`)
 			}
 		}

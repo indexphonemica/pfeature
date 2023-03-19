@@ -1,3 +1,4 @@
 output/*
 *.old
 node_modules/*
+featuresets/iphon_bin*

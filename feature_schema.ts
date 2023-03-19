@@ -113,8 +113,17 @@ export class TemporalFeatureBundle extends Map<string, string[]> {
 
 	/** Handles feature folding. */
 	static fromArray(arr: FeatureBundle[]): TemporalFeatureBundle {
-		// TODO
-		throw Error('Not implemented yet!')
+		const it = new TemporalFeatureBundle()
+		for (let feature_bundle of arr) {
+			for (let feature_name of feature_bundle.keys()) {
+				if (!it.has(feature_name)) it.set(feature_name, [])
+				const feature_value = feature_bundle.get(feature_name)
+				if (feature_value) it.get(feature_name)!.push( feature_value )
+			}
+		}
+
+		// TODO: actually handle feature folding! this does nothing yet
+		return it
 	}
 }
 

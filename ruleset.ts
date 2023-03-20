@@ -1,6 +1,6 @@
 import { BaseCharacter, FeatureBundle, FeatureSchema, TemporalFeatureBundle, Modifier, ModifierRule } from './feature_schema'
 import * as fs from 'fs'
-import { set_eq, warn } from './util'
+import { set_eq, warn, string_to_codepoints } from './util'
 
 const RS_COMMENT = '#'
 const RS_META = '__meta'
@@ -52,17 +52,20 @@ class UnitSegment {
 		this.suffixal_modifiers = props.suffixal_modifiers
 	}
 
-	/** For debugging. */
 	toString() {
-		const prefixes = [...this.prefixal_modifiers].join(',')
-		const combinings = [...this.combining_modifiers].map(x => `◌${x}`).join(',')
-		const suffixes = [...this.suffixal_modifiers].join(',')
-		return `(${prefixes} ${this.base} ${combinings} ${suffixes})`
+		const components = [
+			[...this.prefixal_modifiers].map(string_to_codepoints).join('+'),
+			string_to_codepoints(this.base).join('+'),
+			[...this.combining_modifiers].map(string_to_codepoints).join('+'),
+			[...this.suffixal_modifiers].map(string_to_codepoints).join('+')
+		]
+		return `{${components.map(str => str.length ? str : '0').join('-')}}`
 	}
 
+	// FIXME this feels wrong - why don't we just save the raw string when we create the UnitSegment?
 	get raw() {
 		const prefixes = [...this.prefixal_modifiers].join('')
-		const combinings = [...this.combining_modifiers].map(x => `◌${x}`).join('')
+		const combinings = [...this.combining_modifiers].join('')
 		const suffixes = [...this.suffixal_modifiers].join('')
 		return `${prefixes}${this.base}${combinings}${suffixes}`
 	}
@@ -158,7 +161,7 @@ class Segment {
 	}
 
 	toString() {
-		return `${this.#raw} ( ${this.units.map(x => x.toString())} )`
+		return `${this.#raw} (${this.units.map(x => x.toString())})`
 	}
 
 	get_normalized(ruleset: Ruleset) {
@@ -542,6 +545,7 @@ export class Ruleset {
 	//     (Or possibly we should just drop the usage. How should /a̤a̰/ (chon1284-1) be handled? Possibly this is a concern for the
 	//     feature model, though.)
 	featuralize(segment_raw: string) {
+		// console.log('trying to parse', segment_raw, string_to_codepoints(segment_raw))
 		let segment = this.parse_segment(segment_raw)
 
 		// Rudimentary feature folding.
@@ -552,6 +556,7 @@ export class Ruleset {
 		if (!segment.is_normalized(this)) {
 			let norm = segment.get_normalized(this)
 			warn(`${segment} not normalized: normal form ${norm}`)
+			// console.log('trying to featuralize normalized', norm.raw, string_to_codepoints(norm.raw))
 			if ( !features.eq(this.featuralize(norm.raw)) ) {
 				warn(`  Normalization affects featuralization! This is probably Very Bad.`)
 			}

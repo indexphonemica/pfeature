@@ -17,3 +17,13 @@ export function warn(txt: string) {
 export function print_warnings() {
     for (let i of warnings) console.warn(i) // TODO should probably write to file instead
 }
+
+export function string_to_codepoints(s: string) {
+    let res: string[] = []
+    for (let i = 0; i < s.length; i++) {
+        const codepoint = s.codePointAt(i)!
+        if (codepoint > 0xFFFF) i++ // skip surrogate
+        res.push( codepoint.toString(16).padStart(4, '0').toUpperCase() )
+    }
+    return res
+}

@@ -1,4 +1,5 @@
 import * as fs from 'fs'
+import { fold } from './feature_folding'
 
 /**  A Feature is the basic element of featuralization.
  *  It has a name and a map of values. This lets us accommodate both UPSID-style descriptive features and PHOIBLE-style
@@ -113,7 +114,7 @@ export class TemporalFeatureBundle extends Map<string, string[]> {
 
 	/** Handles feature folding. */
 	static fromArray(arr: FeatureBundle[]): TemporalFeatureBundle {
-		const it = new TemporalFeatureBundle()
+		const it = new Map<string, string[]>()
 		for (let feature_bundle of arr) {
 			for (let feature_name of feature_bundle.keys()) {
 				if (!it.has(feature_name)) it.set(feature_name, [])
@@ -121,9 +122,8 @@ export class TemporalFeatureBundle extends Map<string, string[]> {
 				if (feature_value) it.get(feature_name)!.push( feature_value )
 			}
 		}
-
-		// TODO: actually handle feature folding! this does nothing yet
-		return it
+		
+		return new TemporalFeatureBundle( fold(it) )
 	}
 }
 

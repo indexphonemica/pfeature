@@ -1,5 +1,7 @@
 [
-    {"name": "voice", "values": {"+": [], "-": []}},
+    {"name": "voice", "values": {"+": [
+		{"name": "breathy", "values": {"+": [], "-": []}}
+	], "-": []}},
 
     {"name": "nasal", "values": {"+": [], "-": []}},
     {"name": "obstruent", "values": {"+": [], "-": []}},

@@ -205,6 +205,7 @@ export class Ruleset {
 
 	feature_schema: FeatureSchema
 
+	// FIXME defaults are applied sometimes to combinings etc
 	defaults: FeatureBundle
 	aliases: Map<string, FeatureBundle>
 

@@ -14,7 +14,7 @@ __meta alias nasal     : +nasal -obstruent
 __meta alias fricative : -nasal -obstruent
 # prenasalized stops are +nasal +obstruent; prenasalized fricatives in this model are impossible
 
-__meta alias vowel   : -coronal +dorsal -consonantal +syllabic
+__meta alias vowel   : -coronal +dorsal -consonantal +syllabic +voice
 __meta alias front   :          +dorsal +front -back
 __meta alias central :          +dorsal -front -back
 __meta alias back    :          +dorsal -front +back
@@ -86,7 +86,9 @@ combin ◌̠ *alveolar : *postalveolar
 combin ◌̠ *dental -strident : *alveolar
 
 # devoiced
-combin ◌̥ +voice : -voice
+combin ◌̥ +voice : -voice 
+
+combin ◌̤ +voice : +breathy
 
 # prenasalization (can only apply to plosives in this model)
 prefix ⁿ *plosive : +nasal
@@ -101,4 +103,3 @@ suffix ʲ -front  : +front
 # Actually it's fine that there's no good way to write an unconditional rule - unconditional rules rarely make sense.
 suffix ʷ -labial : +labial +round
 suffix ʷ -round  : +round
-

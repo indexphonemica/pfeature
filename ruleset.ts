@@ -205,7 +205,6 @@ export class Ruleset {
 
 	feature_schema: FeatureSchema
 
-	// FIXME defaults are applied sometimes to combinings etc
 	defaults: FeatureBundle
 	aliases: Map<string, FeatureBundle>
 
@@ -315,7 +314,7 @@ export class Ruleset {
 		if (!alias_name) throw PARSE_ERROR
 		if (line.shift() !== ':') throw PARSE_ERROR
 
-		let bundle = this.parse_feature_list(line)
+		let bundle = this.parse_feature_list(line, true)
 		// TODO some kind of validation here
 		// TODO either merge or error if already exists
 		this.aliases.set(alias_name, bundle)
@@ -338,7 +337,7 @@ export class Ruleset {
 		if (this.base_characters.has(base_char)) throw new Error(`Duplicate base defn: ${line.join(' ')}`)
 		if (line.shift() !== ':') throw PARSE_ERROR
 		if (line.length === 0) throw PARSE_ERROR
-		const features = this.parse_feature_list(line)
+		const features = this.parse_feature_list(line, true)
 		this.feature_schema.validate_bundle(features, line.join(' '))
 
 		this.base_characters.set(base_char, {
@@ -415,8 +414,8 @@ export class Ruleset {
 		return fname
 	}
 
-	private parse_feature_list(features: string[]): FeatureBundle {
-		let bundle = new FeatureBundle([...this.defaults])
+	private parse_feature_list(features: string[], use_defaults = false): FeatureBundle {
+		let bundle = new FeatureBundle(use_defaults ? [...this.defaults] : [])
 		for (let f of features) {
 			// TODO handle alias references
 			// ^ what does this mean?
